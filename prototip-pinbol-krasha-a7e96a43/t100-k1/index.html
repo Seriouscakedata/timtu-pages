@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пинбол-краш</title>
+<style>
+  :root { --bg:#07060f; --panel:#120f24; --line:#2a2550; --text:#e9e7ff; --muted:#8f98b3; --accent:#59c8ff; --win:#4ade80; --lose:#ef4444; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, -apple-system, sans-serif; }
+  body { min-height: 100vh; }
+  #app { max-width: 1060px; margin: 0 auto; padding: 12px 16px 24px; display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { #app { grid-template-columns: auto 400px; align-items: start; } }
+  .col-board { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  #boardWrap { width: 100%; display: flex; justify-content: center; }
+  @media (min-width: 900px) { #boardWrap { width: calc((100vh - 84px) * 0.6); min-width: 420px; max-width: 660px; } }
+  canvas#board { display: block; border-radius: 18px; box-shadow: 0 0 0 2px #1d2550, 0 10px 40px rgba(60,120,255,0.18); touch-action: manipulation; }
+  #chips { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; min-height: 28px; }
+  @media (max-width: 899px) {
+    #chips { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); }
+    #app { padding-bottom: 92px; }
+    #go { position: fixed; left: 16px; right: 16px; bottom: 12px; z-index: 5; }
+  }
+  .chip { display: flex; align-items: center; gap: 3px; background: #15122b; border: 1px solid #262145; border-radius: 8px; padding: 3px 4px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap; min-width: 0; }
+  .chip i { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+  .chip span { overflow: hidden; text-overflow: ellipsis; }
+  .chip.wait { opacity: .45; }
+  .chip.warp { background: #1a0f30; border-color: #b07cff; color: #e3ccff; }
+  .chip.win { background: #0f3b22; border-color: #22c55e; color: #bbf7d0; }
+  .chip.lose { background: #3a1010; border-color: #7f1d1d; color: #fca5a5; text-decoration: line-through; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: .02em; }
+  h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; letter-spacing: 0; }
+  .bal { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px; background: #0b0a18; border-radius: 12px; }
+  .bal b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .ctl { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+  .ctl label { color: var(--muted); font-size: 13px; }
+  .stepper { display: flex; align-items: center; gap: 6px; }
+  .stepper output { min-width: 64px; text-align: center; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .sbtn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid #3a3470; background: #1d1840; font-size: 20px; font-weight: 800; }
+  .sbtn:disabled, input:disabled { opacity: .4; cursor: default; }
+  .num { width: 76px; height: 38px; text-align: center; font: inherit; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums;
+         color: var(--text); background: #0b0a18; border: 1px solid #3a3470; border-radius: 10px; }
+  .num:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .num.bad { border-color: var(--lose); color: #fca5a5; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .seg button { height: 40px; border-radius: 10px; border: 1px solid #3a3470; background: #1d1840; font-size: 14px; font-weight: 700; color: var(--muted); }
+  .seg button.on { background: linear-gradient(180deg, #6d3fd1, #4a2696); border-color: #a66bff; color: #fff; box-shadow: 0 0 12px rgba(166,107,255,.45); }
+  .seg button:disabled { opacity: .45; cursor: default; }
+  .seg button.on:disabled { opacity: .75; }
+  .negnote { font-size: 13px; color: #c9a6ff; font-variant-numeric: tabular-nums; }
+  .err { min-height: 0; font-size: 13px; color: #fca5a5; text-align: center; }
+  .err:empty { display: none; }
+  .prog { text-align: center; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 18px; }
+  .prog b { color: var(--text); }
+  .total { text-align: center; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .total b { color: var(--text); }
+  #go { height: 56px; border: 0; border-radius: 14px; font-size: 18px; font-weight: 900; letter-spacing: .04em; color: #10102a;
+        background: linear-gradient(180deg, #8ee7ff, #39b5ff); box-shadow: 0 6px 24px rgba(57,181,255,.35); }
+  #go:disabled { background: #2a2650; color: #8f98b3; box-shadow: none; cursor: default; }
+  #snd { align-self: flex-end; background: none; border: 1px solid #3a3470; border-radius: 8px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
+  .sect { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .legend { display: grid; gap: 7px; font-size: 13px; }
+  .legend div { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; }
+  .ico { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: 12px; color: #2a1600; }
+  .ico.pin { width: 12px; height: 12px; margin-left: 5px; background: radial-gradient(circle at 35% 30%, #fff, #4f8fd6); box-shadow: 0 0 6px #7fd7ff; }
+  .ico.p05, .ico.p1, .ico.p2, .ico.p3, .ico.p5, .ico.n1, .ico.n2 { width: 26px; height: 26px; font-size: 10px; letter-spacing: -.02em; }
+  .ico.p05 { font-size: 8.5px; background: radial-gradient(circle at 35% 30%, #f2fbff, #7fd0ff 50%, #1d5f8a); box-shadow: 0 0 0 2px #c9ecff; }
+  .ico.p1 { background: radial-gradient(circle at 35% 30%, #fffbe8, #ff8a1f 50%, #a24a00); box-shadow: 0 0 0 2px #ffb347; }
+  .ico.p2 { background: radial-gradient(circle at 35% 30%, #fffbe8, #ffd24a 50%, #a86d00); box-shadow: 0 0 0 2.5px #fff1b3; }
+  .ico.n1, .ico.n2 { background: radial-gradient(circle, #6a48a3, #2a1446); box-shadow: 0 0 0 2px #7c4fe0, 0 0 8px #a66bff; color: #f1e8ff; }
+  .ico.n2 { background: radial-gradient(circle, #4a2a80, #2a1446); box-shadow: 0 0 0 3px #5a2bc0, 0 0 10px #a66bff; }
+  .ico.spin { border-radius: 4px; width: 22px; height: 6px; background: linear-gradient(90deg, #e6fcff, #5ff0ff); box-shadow: 0 0 8px #5ff0ff; transform: rotate(-30deg); }
+  .ico.p3 { background: radial-gradient(circle at 35% 30%, #fffbe8, #ff5fae 50%, #8f1457); box-shadow: 0 0 0 2.5px #ffc2e2; }
+  .ico.p5 { color: #3a2000; background: radial-gradient(circle at 35% 30%, #fffbe8, #fff3c4 50%, #c26a00); box-shadow: 0 0 0 3px #ff5af4, 0 0 0 5px #36e2ff; }
+  .ico.bh { background: radial-gradient(circle, #000 45%, #9b5cff 62%, #ff9a5a 78%, transparent 82%); box-shadow: 0 0 10px #b07cff; }
+  .ico.wh { background: radial-gradient(circle, #fff 30%, #8fd3ff 70%, #2f7fd0); box-shadow: 0 0 10px #9fdcff; }
+  .ico.hg { border-radius: 5px; background: #16a34a; } .ico.hr { border-radius: 5px; background: #b91c1c; }
+  .legend em { font-style: normal; color: var(--muted); }
+  #ladder { display: block; }
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="col-board">
+    <div id="boardWrap"><canvas id="board" aria-label="Игровое поле пинбола"></canvas></div>
+    <div id="chips"></div>
+  </div>
+  <div class="panel">
+    <h1>Пинбол-краш <small>прототип · демо-кредиты</small></h1>
+    <div class="bal"><span style="color:var(--muted)">Баланс</span><b id="balance">0</b></div>
+    <div class="ctl"><label for="bet">Ставка за шар</label>
+      <div class="stepper"><button class="sbtn" id="betMinus" aria-label="Уменьшить ставку">−</button><input class="num" id="bet" type="text" inputmode="numeric" value="1" aria-label="Ставка за шар"><button class="sbtn" id="betPlus" aria-label="Увеличить ставку">+</button></div></div>
+    <div class="ctl"><label for="count">Количество шаров</label>
+      <div class="stepper"><button class="sbtn" id="cntMinus" aria-label="Меньше шаров">−</button><input class="num" id="count" type="text" inputmode="numeric" value="1" aria-label="Количество шаров"><button class="sbtn" id="cntPlus" aria-label="Больше шаров">+</button></div></div>
+    <div>
+      <div class="ctl" style="margin-bottom:6px"><label>Сложность</label><span class="negnote" id="negNote"></span></div>
+      <div class="seg" id="level" role="radiogroup" aria-label="Сложность"></div>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+    <div class="total">Стоимость серии: <b id="total"></b></div>
+    <button id="go">ЗАПУСК</button>
+    <div class="prog" id="prog"></div>
+    <button id="snd">🔊 Звук</button>
+    <div>
+      <div class="sect">Цвет шара по иксам</div>
+      <div style="width:100%"><canvas id="ladder"></canvas></div>
+    </div>
+    <div>
+      <div class="sect">Элементы стола</div>
+      <div class="legend">
+        <div><span class="ico p05">+0.5x</span><span>Голубой бампер <em>— прибавляет пол-икса: ×3 → ×3.5</em></span></div>
+        <div><span class="ico p1">+1x</span><span>Бампер <em>— прибавляет к шару 1 икс: ×3 → ×4</em></span></div>
+        <div><span class="ico p2">+2x</span><span>Золотой бампер <em>— прибавляет 2 икса: ×3 → ×5</em></span></div>
+        <div><span class="ico p3">+3x</span><span>Розовый бампер под центральным <em>— прибавляет 3 икса</em></span></div>
+        <div><span class="ico p5">+5x</span><span>Центральный радужный бампер <em>— прибавляет 5 иксов</em></span></div>
+        <div><span class="ico n1">−1x</span><span>Малый фиолетовый <em>— отнимает 1 икс</em></span></div>
+        <div><span class="ico n2">−2x</span><span>Большой фиолетовый <em>— отнимает 2 икса; ниже ×1 шар не падает. Число фиолетовых задаёт сложность</em></span></div>
+        <div><span class="ico pin"></span><span>Гвоздики и слингшоты <em>— только отбивают, множитель не меняют</em></span></div>
+        <div><span class="ico spin"></span><span>Мельницы и вертушки <em>— сбивают шар на случайный путь, множитель не меняют</em></span></div>
+        <div><span class="ico hg"></span><span>Зелёная лунка <em>— ставка × множитель шара</em></span></div>
+        <div><span class="ico hr"></span><span>Красная лунка <em>— шар сгорает, 0</em></span></div>
+        <div><span class="ico bh"></span><span>Чёрная дыра в центре <em>— засасывает шар; он вылетает из белой дыры наверху с тем же множителем и снова идёт по бамперам</em></span></div>
+        <div><span class="ico wh"></span><span>Белая дыра <em>— выход портала, ездит влево-вправо: откуда вылетит шар, заранее не знаешь</em></span></div>
+      </div>
+    </div>
+    <div class="hint">Шары летят сами, игрок только смотрит. Каждый шар играет на полную ставку и считается отдельно: 5 шаров по 10 — серия за 50. Шар стартует с ×1 и меняет множитель только на бамперах с надписью. Попал в чёрную дыру — получает ещё один проход по полю сверху. Ободок вокруг шара — иксы до следующего цвета. Пробел — запуск.</div>
+  </div>
+</div>
+<script>
+// Движок «Пинбол-краша»: стол, физика шаров, ценность шара (лестница металлов), лунки.
+// Чистый JS без DOM — тот же код крутится в браузере и в node-симуляторе (tools/sim.mjs).
+const Engine = (() => {
+  const W = 540, H = 900, BR = 10;          // логическое поле и радиус шара
+  const SEP_X = 482, LANE_X = 501;          // стенка пусковой дорожки и ось дорожки
+  const HOLE_TOP = 842, HOLE_Y = 872;       // верх разделителей лунок и линия «шар в лунке»
+  const G = 1050;                            // «гравитация» наклонного стола, px/s²
+  const MAX_V = 1750;
+
+  // Множитель шара — целые иксы. Бампер прибавляет или отнимает ровно то, что на нём написано:
+  // ×3 → удар о «+2x» → ×5; ×3 → «−2x» → ×1. Ниже ×1 множитель не опускается.
+  // Лестница металлов — только внешний вид шара по набранным иксам. divs — делений (иксов) до следующей ступени.
+  const TIERS = [
+    { key: 'steel',   name: 'Сталь',            min: 1,  max: 3,  divs: 2 },
+    { key: 'copper',  name: 'Медь',             min: 3,  max: 5,  divs: 2 },
+    { key: 'silver',  name: 'Серебро',          min: 5,  max: 8,  divs: 3 },
+    { key: 'gold',    name: 'Золото',           min: 8,  max: 12, divs: 4 },
+    { key: 'diamond', name: 'Бриллиант',        min: 12, max: 17, divs: 5 },
+    { key: 'comet1',  name: 'Ледяной хвост',    min: 17, max: 23, divs: 6 },
+    { key: 'comet2',  name: 'Пурпурный хвост',  min: 23, max: 30, divs: 7 },
+    { key: 'comet3',  name: 'Радужный хвост',   min: 30, max: 30, divs: 0 },
+  ];
+  const V_MIN = 1;
+  const r2 = v => Math.round(v * 1000) / 1000;
+
+  function tierOf(V) {
+    for (let i = TIERS.length - 1; i >= 0; i--) if (V >= TIERS[i].min - 1e-6) return i;
+    return 0;
+  }
+  // Деления внутри ступени: сколько иксов набрано из скольких до следующего металла
+  function divsOf(V) {
+    const t = tierOf(V), T = TIERS[t];
+    if (!T.divs) return { have: 0, total: 0 };
+    return { have: Math.min(T.divs, Math.round(V - T.min)), total: T.divs };
+  }
+  // Удар о бампер с надписью val (+1, +2, −1, −2)
+  const apply = (V, val) => Math.max(V_MIN, V + val);
+  const gain = (V, n = 1) => apply(V, Math.abs(n));          // совместимость со старыми скриптами снимков
+  const loss = (V, n = 1) => apply(V, -Math.abs(n));
+
+  // ---------- стол ----------
+  // Сложность: число отрицательных бамперов. Гнёзда упорядочены: лёгкая берёт первые 2, средняя 4, сложная 6.
+  const LEVELS = [
+    { key: 'easy',   name: 'Лёгкая',  neg: 2 },
+    { key: 'medium', name: 'Средняя', neg: 4 },
+    { key: 'hard',   name: 'Сложная', neg: 6 },
+  ];
+  // Активные бамперы стоят в верхней половине поля сеткой со смещёнными рядами (шаг 92 по горизонтали, 70 по вертикали):
+  // между любыми двумя остаётся проход шире шара. Размер бампера растёт с модулем надписи: «2x» крупнее «1x».
+  // Круг 6: номиналы 0.5, 1, 2, 3, 5 (плюс) и −1, −2 (минус) — велел владелец; раскладка подобрана симулятором
+  // tools/balance.mjs под отдачу 96% на 100 000 шаров. Раскладка — LAYOUT ниже (её же подменяет балансировщик).
+  const R_OF = { 0.5: 19, 1: 22, 2: 26, 3: 28, 5: 31, '-1': 20, '-2': 25 };
+  // Почему так: отдачу задаёт в первую очередь плотность бамперов (каждый отбивает шар обратно в поле):
+  // 16 бамперов — ~12 ударов на шар и RTP ~290%, поэтому плюсов стало 8 вместо 10, а крупные номиналы
+  // («+2x», «+1x», «+5x», «+3x») стоят одиночками на оси поля — по ним шар бьёт вдвое реже, чем по паре.
+  // Минусы — внизу, после плюсов: отнимают уже набранное. Каждая следующая пара минусов ещё и подбрасывает
+  // шар обратно к плюсам, поэтому отдача на всех трёх сложностях одна — 96%, а сложность меняет разброс.
+  let LAYOUT = {
+    pos: [
+      [159, 295, 0.5], [251, 295, 2], [343, 295, 0.5],     // верхний ряд: «+0.5x» по бокам, «+2x» на оси
+      [113, 365, 0.5], [251, 365, 1], [389, 365, 0.5],     // второй ряд: «+0.5x» у бортов, «+1x» на оси
+      [251, 435, 5],                                       // центр — «+5x»
+      [251, 505, 3],                                       // под ним «+3x»
+    ],
+    // Отрицательные гнёзда упорядочены: лёгкая берёт первые 2, средняя 4, сложная 6.
+    // Положение каждой пары подобрано симулятором под 96% на своей сложности (tools/balance.mjs).
+    neg: [
+      [149, 575, -1], [353, 575, -1],      // лёгкая: «−1x» над гвоздиками
+      [146, 435, -2], [356, 435, -2],      // средняя: + «−2x» по бокам от «+5x»
+      [121, 500, -1], [381, 500, -1],      // сложная: + «−1x» у бортов
+    ],
+  };
+
+  // Вращающиеся преграды (круг 5 — зеркальная раскладка). [id, x, y, длина лопасти, скорость, отбой]
+  const AXIS = 251;
+  const MILLS = [
+    ['spinT', AXIS, 62, 40, 2.4, 0],                                        // макушка купола, на оси
+    ['spinTL', AXIS - 125, 100, 32, 2.4, 0], ['spinTR', AXIS + 125, 100, 32, 2.4, 0],   // под аркой
+    ['millUL', AXIS - 160, 205, 26, 3.6, 300], ['millUR', AXIS + 160, 205, 26, 3.6, 300], // по краям хода белой дыры
+    ['millSL', AXIS - 175, 300, 22, 4, 300], ['millSR', AXIS + 175, 300, 22, 4, 300],   // у верхнего ряда бамперов
+    ['millL', AXIS - 185, 435, 24, 3.2, 300], ['millR', AXIS + 185, 435, 24, 3.2, 300],   // боковые каналы у «+5x»
+    ['millC', AXIS, 575, 30, 2.6, 300],                                     // центр, между «+3x»
+  ];
+  function buildTable(level = 1, rnd = Math.random) {
+    const circles = [], segs = [], movers = [];
+    // val = 0 у всего, что не бампер с надписью: гвоздики, стойки, ступицы множитель не меняют
+    const C = (x, y, r, kind, o = {}) => circles.push({ x, y, r, kind, val: 0, kick: 0, e: 0.5, ...o });
+    const S = (x1, y1, x2, y2, kind = 'wall', o = {}) => segs.push({ x1, y1, x2, y2, kind, val: 0, kick: 0, e: 0.45, ...o });
+
+    // Корпус: верхняя арка, борта, стенка пусковой дорожки
+    const acx = 270, acy = 262, ar = 250, n = 44;
+    for (let i = 0; i < n; i++) {
+      const a1 = Math.PI + Math.PI * i / n, a2 = Math.PI + Math.PI * (i + 1) / n;
+      S(acx + ar * Math.cos(a1), acy + ar * Math.sin(a1), acx + ar * Math.cos(a2), acy + ar * Math.sin(a2), 'arc', { e: 0.3 });
+    }
+    S(20, 262, 20, 900); S(520, 262, 520, 900);
+    S(SEP_X, 318, SEP_X, 900, 'lane');
+    S(SEP_X, 893, 520, 893, 'plunger', { e: 0 });
+    // Калитка на выходе из дорожки: шар, отбитый вертушкой, не проваливается обратно к плунжеру
+    S(SEP_X, 318, 520, 278, 'gate', { e: 0.4 });
+
+    // Верхние стойки-гвоздики: нейтральные
+    C(162, 160, 8, 'pin'); C(251, 136, 8, 'pin'); C(340, 160, 8, 'pin');
+    // Активные бамперы с надписью: «+1x», «+2x» — прибавляют иксы
+    const L = LAYOUT, pos = L.posByLevel ? L.posByLevel[level] : L.pos;
+    for (const [x, y, val] of pos) C(x, y, R_OF[val], 'bump', { val, kick: val >= 2 ? 640 : 580, e: 0.9 });
+    // Отрицательные «−1x», «−2x»: сколько их на столе — решает сложность (первые N гнёзд из LAYOUT.neg)
+    for (const [x, y, val] of L.neg.slice(0, LEVELS[level].neg)) C(x, y, R_OF[val], 'neg', { val, kick: 520, e: 0.8 });
+    // Нейтральные гвоздики в поле бамперов (круг 6): только сбивают шар, множитель не меняют
+    const pins = L.pinsByLevel ? L.pinsByLevel[level] : (L.pins || []);
+    for (const [x, y] of pins) C(x, y, 8, 'pin');
+    // Преграды: множитель не меняют — только сбивают шар на случайную траекторию.
+    // Скорость, фаза и направление вращения — свои на каждую серию.
+    // Без них 96% шаров первым ударом бьют левый слингшот (tools/sim.mjs … nomov), с ними первый удар расходится по столу.
+    //  · две вертушки под аркой: шар, летящий по арке, либо проскакивает лопасть, либо сбивается вниз;
+    //  · вертушка справа у калитки дорожки (spinS). Левая вертушка у схода с арки (spinL) убрана в круге 4:
+    //    шар залипал в ней на выходе слева.
+    //  · три мельницы внутри поля бамперов (круг 3): две в боковых каналах между рядами, одна по центру над гвоздиками.
+    //    Шар, проходящий поле, ещё раз сбивается на случайную сторону — путь между бамперами не повторяется.
+    //  Круг 5 (владелец: «расположи мельницы симметрично»): все вращающиеся преграды стоят зеркальными парами
+    //  относительно оси поля x = AXIS (ось бамперов), одиночные — ровно на оси. Пара = одинаковые размер и скорость,
+    //  а направление и фаза вращения у каждой мельницы свои — раскладка симметрична, траектории нет.
+    for (const [id, cx, cy, len, om, kick] of MILLS) {
+      movers.push({ kind: 'spin', id, cx, cy, len, kick, ang: rnd() * Math.PI, om: (om + rnd() * 1.6) * (rnd() < 0.5 ? -1 : 1), flash: 0 });
+      C(cx, cy, 6, 'hub', { e: 0.4 });
+    }
+    //  · белая дыра (бывший челнок) ходит влево-вправо со случайной фазой. Шар сквозь неё пролетает —
+    //    это выход портала: шар, упавший в чёрную дыру внизу, вылетает отсюда в текущем её положении.
+    movers.push({ kind: 'white', id: 'shut', x0: AXIS, amp: 105, y: 206, r: 15, ph: rnd() * Math.PI * 2, fr: 1.3 + rnd() * 0.6, x: 251, vx: 0, flash: 0 });
+    // Нижние боковые гвоздики
+    for (const [x, y] of [[70, 560], [432, 560]]) C(x, y, 7, 'pin');
+    // Слингшоты по бокам: отбивают, множитель не меняют
+    S(22, 610, 92, 690, 'sling', { kick: 480, e: 0.8 });
+    S(22, 690, 92, 690, 'wall');
+    S(480, 610, 410, 690, 'sling', { kick: 480, e: 0.8 });
+    S(480, 690, 410, 690, 'wall');
+    // Плинко-поле над лунками
+    const hw0 = (SEP_X - 20) / 9;
+    const rows = [[650, 1], [705, 0], [758, 1], [808, 0]];
+    for (const [y, center] of rows) {
+      for (let i = 0; i < 9; i++) {
+        const x = center ? 20 + hw0 * (i + 0.5) : 20 + hw0 * (i + 1);
+        if (x > SEP_X - 30) continue;
+        if (y < 700 && (x < 100 || x > 402)) continue;   // не лезем на слингшоты
+        C(x, y, 6, 'pin');
+      }
+    }
+    // Лунки: 9 ячеек между стенкой и стенкой дорожки
+    const holes = [], hw = (SEP_X - 20) / 9;
+    const pattern = HOLE_PATTERN;
+    for (let i = 0; i < 9; i++) holes.push({ x0: 20 + i * hw, x1: 20 + (i + 1) * hw, green: pattern[i] === 'G', black: pattern[i] === 'B', flash: 0 });
+    for (let i = 1; i < 9; i++) {
+      const x = 20 + i * hw;
+      S(x, HOLE_TOP, x, 900, 'div', { e: 0.3 });
+      C(x, HOLE_TOP, 4, 'post', { e: 0.4 });
+    }
+    circles.forEach((c, i) => { c.id = 'c' + i; c.flash = 0; });
+    segs.forEach((s, i) => { s.id = 's' + i; s.flash = 0; });
+    return { circles, segs, holes, movers, level };
+  }
+  // G — зелёная (ставка × множитель), R — красная (0), B — чёрная дыра по центру: шар не платит и не сгорает,
+  // а уходит в портал и вылетает из белой дыры наверху с тем же множителем — ещё один проход по бамперам.
+  let HOLE_PATTERN = 'RGRRBRRGR';
+  // Чёрная дыра: центр воронки и её притяжение. Шар в радиусе BH_R ниже BH_TOP тянет к центру — «засасывает».
+  const BH_X = 251, BH_Y = 866, BH_R = 95, BH_TOP = 775, BH_PULL = 1500, WARP_T = 0.8, LIFE_MAX = 150;
+
+  // ---------- мир ----------
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function createWorld(seed = 1, level = 1) {
+    const rnd = mulberry32(seed);
+    return { t: 0, rnd, table: buildTable(level, rnd), balls: [], events: [] };
+  }
+  // Серия: n шаров, каждый играет на полную ставку bet. Интервал и сила пуска — со случайным разбросом.
+  function launchVolley(world, n, bet, interval = 0.3) {
+    let at = world.t + 0.15;
+    for (let i = 0; i < n; i++) {
+      world.balls.push({
+        id: world.balls.length, idx: i, bet, x: LANE_X, y: 893 - BR, vx: 0, vy: 0,
+        V: 1, tier: 0, state: 'queued', launchAt: at,
+        power: 1430 + world.rnd() * 330, born: 0, start: 0, cd: {}, hits: 0, plus: 0, minus: 0, payout: 0, hole: -1, warps: 0,
+      });
+      at += interval * (0.7 + world.rnd() * 0.6);
+    }
+  }
+  // Движение преград входа
+  function moveMovers(world, dt) {
+    for (const m of world.table.movers) {
+      if (m.kind === 'spin') m.ang += m.om * dt;
+      else { const a = m.ph + m.fr * world.t; m.x = m.x0 + m.amp * Math.sin(a); m.vx = m.amp * m.fr * Math.cos(a); }
+    }
+  }
+  function collideMover(world, b, m) {
+    if (m.kind === 'white') return;                      // белая дыра — портал, не преграда
+    let qx, qy, ux, uy, r, kick, e;
+    if (m.kind === 'spin') {
+      // лопасть — отрезок через ось, точки поверхности движутся со скоростью ω × радиус
+      const ex = Math.cos(m.ang) * m.len, ey = Math.sin(m.ang) * m.len;
+      let u = ((b.x - m.cx) * ex + (b.y - m.cy) * ey) / (m.len * m.len);
+      u = Math.max(-1, Math.min(1, u));
+      qx = m.cx + ex * u; qy = m.cy + ey * u;
+      ux = -m.om * (qy - m.cy); uy = m.om * (qx - m.cx);
+      r = BR + 3; kick = m.kick || 0; e = 0.55;
+    } else {
+      qx = m.x; qy = m.y; ux = m.vx; uy = 0; r = BR + m.r; kick = 380; e = 0.7;
+    }
+    const dx = b.x - qx, dy = b.y - qy, d2 = dx * dx + dy * dy;
+    if (d2 >= r * r) return;
+    const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d;
+    b.x = qx + nx * r; b.y = qy + ny * r;
+    const impact = -((b.vx - ux) * nx + (b.vy - uy) * ny);
+    resolve(world, b, nx, ny, e, impact > 40 ? kick : 0, ux, uy);
+    if (impact > 60) touch(world, b, m);                  // val нет — множитель не меняется, только вспышка
+  }
+
+  // Касание элемента: вспышка у всех; множитель меняют только бамперы с надписью (val ≠ 0)
+  function touch(world, b, el) {
+    const last = b.cd[el.id] || -1;
+    if (world.t - last < 0.14) return;
+    b.cd[el.id] = world.t;
+    el.flash = 1;
+    if (!el.val) return;
+    const isNeg = el.val < 0, oldV = b.V, oldTier = b.tier;
+    b.V = apply(b.V, el.val);
+    b.tier = tierOf(b.V);
+    b.hits++; if (isNeg) b.minus++; else b.plus++;
+    world.events.push({ type: isNeg ? 'loss' : 'gain', ball: b, el, val: el.val, oldV, newV: b.V, oldTier, newTier: b.tier, x: b.x, y: b.y });
+  }
+
+  function collideCircle(world, b, c) {
+    const dx = b.x - c.x, dy = b.y - c.y, rr = c.r + BR;
+    const d2 = dx * dx + dy * dy;
+    if (d2 >= rr * rr) return;
+    const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d;
+    b.x = c.x + nx * rr; b.y = c.y + ny * rr;
+    const impact = -(b.vx * nx + b.vy * ny);
+    resolve(world, b, nx, ny, c.e, impact > 40 ? c.kick : 0);
+    if (impact > 60) touch(world, b, c);                     // касание вскользь/перекат не считается ударом
+  }
+  function collideSeg(world, b, s) {
+    if (s.kind === 'gate' && b.vy <= 0) return;           // односторонняя калитка: вверх пропускает, вниз — нет
+    const ex = s.x2 - s.x1, ey = s.y2 - s.y1;
+    const L2 = ex * ex + ey * ey;
+    let u = ((b.x - s.x1) * ex + (b.y - s.y1) * ey) / L2;
+    u = Math.max(0, Math.min(1, u));
+    const qx = s.x1 + ex * u, qy = s.y1 + ey * u;
+    const dx = b.x - qx, dy = b.y - qy, d2 = dx * dx + dy * dy;
+    if (d2 >= BR * BR) return;
+    const d = Math.sqrt(d2) || 0.001, nx = dx / d, ny = dy / d;
+    b.x = qx + nx * BR; b.y = qy + ny * BR;
+    const impact = -(b.vx * nx + b.vy * ny);
+    resolve(world, b, nx, ny, s.e, impact > 40 ? s.kick : 0);
+    if (s.kind === 'sling' && impact > 60) touch(world, b, s);
+  }
+  function resolve(world, b, nx, ny, e, kick, ux = 0, uy = 0) {
+    // отражаем скорость относительно поверхности (у неподвижных элементов ux = uy = 0)
+    const vn = (b.vx - ux) * nx + (b.vy - uy) * ny;
+    if (vn < 0) { b.vx -= (1 + e) * vn * nx; b.vy -= (1 + e) * vn * ny; }
+    if (kick) {
+      const k = kick * (b.age > 16 ? 0.55 : 1);
+      const vn2 = b.vx * nx + b.vy * ny;
+      if (vn2 < k) { b.vx += (k - vn2) * nx; b.vy += (k - vn2) * ny; }
+    }
+    // лёгкий разброс, чтобы шары не повторяли путь друг друга и не замирали на штырьках
+    const j = (world.rnd() - 0.5) * 46;
+    b.vx += -ny * j; b.vy += nx * j;
+  }
+
+  function step(world, dt) {
+    world.t += dt;
+    const T = world.table;
+    moveMovers(world, dt);
+    for (const b of world.balls) {
+      if (b.state === 'queued') {
+        if (world.t >= b.launchAt) { b.state = 'live'; b.vy = -b.power; b.born = b.start = world.t; world.events.push({ type: 'launch', ball: b }); }
+        else continue;
+      }
+      if (b.state === 'warp') {                            // шар внутри портала: появится из белой дыры
+        if (world.t >= b.warpUntil) emerge(world, b);
+        else continue;
+      }
+      if (b.state !== 'live') continue;
+      b.age = world.t - b.born;
+      const g = G * (b.age > 16 ? 1.8 : 1);
+      b.vy += g * dt;
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp > MAX_V) { b.vx *= MAX_V / sp; b.vy *= MAX_V / sp; }
+      // притяжение чёрной дыры: чем ближе к воронке, тем сильнее тянет к центру
+      if (b.y > BH_TOP && b.x < SEP_X) {
+        const dx = BH_X - b.x, dy = BH_Y - b.y, d = Math.hypot(dx, dy);
+        if (d < BH_R && d > 1) { const a = BH_PULL * (1 - d / BH_R); b.vx += dx / d * a * dt; b.vy += dy / d * a * dt; }
+      }
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      for (const c of T.circles) collideCircle(world, b, c);
+      for (const s of T.segs) collideSeg(world, b, s);
+      for (const m of T.movers) collideMover(world, b, m);
+      // Шар скатился обратно в пусковую дорожку — плунжер отправляет его снова
+      if (b.x > SEP_X && b.y > 893 - BR - 2 && b.vy >= -1 && b.age > 0.4) {
+        b.vy = -(1300 + world.rnd() * 350); b.vx = 0; b.x = LANE_X;
+        world.events.push({ type: 'relaunch', ball: b });
+      }
+      if (b.y > HOLE_Y && b.x < SEP_X) { if (T.holes[holeAt(b.x)].black && world.t - b.start < LIFE_MAX) suck(world, b); else settle(world, b); }
+      else if (b.age > 40) settle(world, b);                // предохранитель от застревания
+    }
+  }
+  const holeAt = x => Math.max(0, Math.min(8, Math.floor((x - 20) / ((SEP_X - 20) / 9))));
+  // Чёрная дыра: шар уходит в портал (множитель сохраняется), через WARP_T выходит из белой дыры
+  function suck(world, b) {
+    b.state = 'warp'; b.warpUntil = world.t + WARP_T; b.warps++;
+    world.table.holes[holeAt(b.x)].flash = 1;
+    world.events.push({ type: 'suck', ball: b, x: b.x, y: b.y, V: b.V });
+  }
+  function emerge(world, b) {
+    const m = world.table.movers.find(q => q.kind === 'white');
+    b.x = m.x; b.y = m.y + 2;
+    b.vx = m.vx * 0.35 + (world.rnd() - 0.5) * 180; b.vy = 40 + world.rnd() * 90;
+    b.state = 'live'; b.born = world.t; b.age = 0; b.cd = {};
+    m.flash = 1;
+    world.events.push({ type: 'emerge', ball: b, x: b.x, y: b.y, V: b.V });
+  }
+  function settle(world, b) {
+    const T = world.table;
+    const i = holeAt(b.x);
+    const hole = T.holes[i];
+    b.state = 'done'; b.hole = i;
+    b.payout = hole.green ? r2(b.bet * b.V) : 0;
+    hole.flash = 1;
+    world.events.push({ type: 'hole', ball: b, hole: i, green: hole.green, payout: b.payout, x: b.x, y: b.y });
+  }
+  const allDone = world => world.balls.length > 0 && world.balls.every(b => b.state === 'done');
+
+  return {
+    W, H, BR, SEP_X, LANE_X, HOLE_TOP, HOLE_Y, TIERS, LEVELS, V_MIN, BH_X, BH_Y, BH_R, WARP_T,
+    tierOf, divsOf, apply, gain, loss, createWorld, launchVolley, step, allDone,
+    setHolePattern: p => { HOLE_PATTERN = p; },
+    getLayout: () => LAYOUT, setLayout: l => { LAYOUT = l; },
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Engine;
+
+</script>
+<script>
+// Клиент «Пинбол-краша»: отрисовка стола, шаров по ступеням, эффекты событий, панель серии (ставка, сложность, шары).
+(() => {
+  const E = Engine;
+  const qs = new URLSearchParams(location.search);
+  let seed = +(qs.get('seed') || (Date.now() % 1e9));
+
+  // ---------- внешний вид ступеней ----------
+  // Зелёный и красный зарезервированы за лунками и на шарах не встречаются.
+  const LOOK = [
+    { dark: '#3d434b', base: '#9aa3ad', light: '#f4f7fa', glow: null,      trail: 0,  ui: '#b8c0c9' }, // сталь
+    { dark: '#5e2a10', base: '#c8703a', light: '#ffd6ad', glow: '#ff9a5a', trail: 0,  ui: '#e08a4f' }, // медь
+    { dark: '#5f6875', base: '#d7dde6', light: '#ffffff', glow: '#cfe3ff', trail: 0,  ui: '#dfe6f0' }, // серебро
+    { dark: '#7a4b00', base: '#f2b630', light: '#fff6c8', glow: '#ffc93a', trail: 5,  ui: '#f5c542' }, // золото
+    { dark: '#5fb8d8', base: '#e6fbff', light: '#ffffff', glow: '#9ff3ff', trail: 9,  ui: '#bff6ff' }, // бриллиант
+    { dark: '#0a6f9a', base: '#36e2ff', light: '#d9fbff', glow: '#36e2ff', trail: 16, ui: '#36e2ff' }, // ледяной хвост
+    { dark: '#7a0f74', base: '#ff3df2', light: '#ffd0fb', glow: '#ff3df2', trail: 22, ui: '#ff5af4' }, // пурпурный хвост
+    { dark: '#333',    base: '#fff',    light: '#fff',    glow: '#fff',    trail: 30, ui: '#ffd36b', rainbow: true }, // радужный
+  ];
+  const NEG = '#a66bff', NEG_DARK = '#2a1446';
+  // Цвета активных бамперов по надписи
+  // +0.5 голубой (круг 6), +1 оранжевый, +2 золотой, +3 розовый (круг 4), +5 — самый крупный, с радужным ободом (круг 4)
+  const BUMP = { 0.5: { rim: '#c9ecff', cap: '#7fd0ff', dark: '#1d5f8a', fx: '#bfe6ff', ui: '#a8defa' },
+                 1: { rim: '#ffb347', cap: '#ff8a1f', dark: '#a24a00', fx: '#ffb347', ui: '#ffc27a' },
+                 2: { rim: '#fff1b3', cap: '#ffd24a', dark: '#a86d00', fx: '#fff1b3', ui: '#ffe27a' },
+                 3: { rim: '#ffc2e2', cap: '#ff5fae', dark: '#8f1457', fx: '#ff8cc6', ui: '#ffa3d2' },
+                 5: { rim: '#ffffff', cap: '#fff3c4', dark: '#c26a00', fx: '#fff6d8', ui: '#fff3b0', rainbow: true } };
+  const BH = '#b07cff', WH = '#dff4ff';   // чёрная дыра (фиолетовый ореол) и белая дыра
+  const fmtX = V => V < 10 ? (+V.toFixed(2)).toString() : V < 100 ? (+V.toFixed(1)).toString() : Math.round(V).toString();
+  const fmtM = v => v.toLocaleString('ru-RU', { maximumFractionDigits: 2 });   // кредиты: целые без хвоста, дробные выплаты — до сотых
+  const hueCol = (h, s = 100, l = 65, a = 1) => `hsla(${h % 360},${s}%,${l}%,${a})`;
+
+  // ---------- состояние игры ----------
+  // Ставка — за ОДИН шар, целые кредиты с шагом 1. Стоимость серии = ставка × количество шаров.
+  const BET_MIN = 1, BET_MAX = 1000, BALLS_MIN = 1, BALLS_MAX = 20;
+  const S = {
+    phase: 'ready',            // ready → flying → result → ready (карта состояний — в notes сдачи)
+    balance: 1000, bet: 1, count: 1, level: 1,   // по умолчанию: ставка 1, один шар, средняя сложность
+    world: null, stake: 0, won: 0, resultT: 0, sound: true,
+  };
+  const FX = { parts: [], rings: [], floats: [], shake: 0, flashScreen: 0, fireworks: 0, dropped: [], banner: null };
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const cv = $('board'), ctx = cv.getContext('2d');
+  const lad = $('ladder'), lctx = lad.getContext('2d');
+  let scale = 1, dpr = 1;
+  const LAD_H = 150;
+
+  function layout() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const wrap = $('boardWrap');
+    const availW = wrap.clientWidth;
+    const desktop = window.innerWidth >= 900;
+    const chipsH = 40;   // круг 4: панели «Выигрыш серии» над полем больше нет — высота отдана столу
+    const availH = desktop ? window.innerHeight - chipsH - 44 : 4000;
+    scale = Math.min(availW / E.W, availH / E.H);
+    cv.style.width = E.W * scale + 'px'; cv.style.height = E.H * scale + 'px';
+    cv.width = Math.round(E.W * scale * dpr); cv.height = Math.round(E.H * scale * dpr);
+    const lw = lad.parentElement.clientWidth;
+    lad.style.width = lw + 'px'; lad.style.height = LAD_H + 'px';
+    lad.width = Math.round(lw * dpr); lad.height = Math.round(LAD_H * dpr);
+  }
+  window.addEventListener('resize', layout);
+
+  // ---------- звук (синтез, без файлов) ----------
+  let ac = null;
+  function audio() { if (!ac) try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} return ac; }
+  function tone(freq, dur, type = 'sine', vol = 0.08, slide = 0, delay = 0) {
+    if (!S.sound || !ac) return;
+    const t0 = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * slide), t0 + dur);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  let lastTick = 0;
+  const SND = {
+    tick(tier) { const n = performance.now(); if (n - lastTick < 35) return; lastTick = n; tone(520 + tier * 90, 0.06, 'triangle', 0.035); },
+    up(tier) { [0, 4, 7, 12].forEach((s, i) => tone(330 * Math.pow(2, (s + tier * 2) / 12), 0.22, 'triangle', 0.06, 0, i * 0.05)); },
+    down(big) { tone(big ? 260 : 200, big ? 0.45 : 0.18, 'sawtooth', 0.05, 0.35); if (big) tone(90, 0.35, 'square', 0.03, 0.5, 0.03); },
+    launch() { tone(140, 0.12, 'square', 0.025, 2.2); },
+    win() { tone(1046, 0.25, 'sine', 0.07); tone(1568, 0.3, 'sine', 0.05, 0, 0.06); },
+    lose() { tone(110, 0.25, 'sine', 0.08, 0.5); },
+    suck() { tone(420, 0.5, 'sine', 0.07, 0.18); tone(120, 0.5, 'triangle', 0.04, 0.5, 0.05); },
+    emerge() { tone(260, 0.35, 'sine', 0.06, 3.2); tone(1400, 0.2, 'triangle', 0.03, 1, 0.25); },
+    salute() { [0, 4, 7, 12, 16].forEach((s, i) => tone(523 * Math.pow(2, s / 12), 0.4, 'triangle', 0.06, 0, i * 0.09)); },
+  };
+
+  // ---------- эффекты ----------
+  function burst(x, y, n, color, spd = 220, life = 0.6, size = 2.5, grav = 300) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = spd * (0.35 + Math.random() * 0.8);
+      FX.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life, max: life, color, size: size * (0.6 + Math.random() * 0.8), grav });
+    }
+  }
+  function shards(x, y, n, look, spd = 260) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = spd * (0.4 + Math.random() * 0.8);
+      FX.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, life: 0.9, max: 0.9, color: Math.random() < 0.5 ? look.base : look.light,
+        size: 2.5 + Math.random() * 3, grav: 900, shard: true, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 20 });
+    }
+  }
+  const ring = (x, y, r0, r1, color, life = 0.5, width = 3) => FX.rings.push({ x, y, r0, r1, color, life, max: life, width });
+  const floater = (x, y, text, color, size = 12, life = 0.9, bold = false) => FX.floats.push({ x, y, text, color, size, life, max: life, bold });
+  const FLOAT_V = 26;   // подписи выплат у лунок всплывают с этой скоростью, px/с
+
+  // Подпись удара: одна на шар, следующий удар перезапускает её (подписи не копятся)
+  const LBL_T = 1.0;
+  const hitLabel = b => { b.fx.lbl = LBL_T; };
+
+  function onEvent(ev) {
+    const b = ev.ball;
+    b.fx = b.fx || { pop: 0, crack: 0, dim: 0, trail: [] };
+    if (ev.type === 'launch' || ev.type === 'relaunch') { plungerAnim = 1; SND.launch(); return; }
+    if (ev.type === 'suck') {
+      // чёрная дыра: шар закручивается в воронку и исчезает (рисует drawWarps), множитель сохраняется
+      b.fx.warpFrom = [ev.x, Math.min(ev.y, E.HOLE_Y)]; b.fx.trail.length = 0;
+      ring(E.BH_X, E.BH_Y, 40, 6, BH, 0.5, 3);
+      burst(E.BH_X, E.BH_Y, 16, '#6b3fc4', 160, 0.6, 2.4, -60);
+      SND.suck();
+      return;
+    }
+    if (ev.type === 'emerge') {
+      // белая дыра наверху выпускает тот же шар с тем же множителем
+      b.fx.trail.length = 0; b.fx.pop = 1.4;
+      ring(ev.x, ev.y, 6, 54, WH, 0.6, 4);
+      burst(ev.x, ev.y, 22, '#bfe9ff', 240, 0.7, 2.6, 120);
+      hitLabel(b);                       // из белой дыры: тот же множитель коротко подпрыгивает над шаром
+      SND.emerge();
+      return;
+    }
+    if (ev.type === 'gain') {
+      const L = LOOK[ev.newTier];
+      const B = BUMP[ev.val] || BUMP[1];
+      burst(ev.x, ev.y, 6 + ev.val * 3, B.fx, 180, 0.4, 2.2);
+      hitLabel(b);   // круг 5: над шаром только текущий множитель «×N» — подпрыгивает и гаснет за секунду
+      if (ev.newTier > ev.oldTier) {
+        // новый цвет шара: вспышка, кольцо (названий ступеней на поле нет — хватает цвета и хвоста)
+        b.fx.pop = 1.6;
+        ring(ev.x, ev.y, 10, 60 + ev.newTier * 8, L.glow || L.base, 0.6, 4);
+        burst(ev.x, ev.y, 18 + ev.newTier * 4, L.base, 300, 0.8, 3);
+        if (ev.newTier >= 4) FX.flashScreen = 0.35;
+        SND.up(ev.newTier);
+      } else {
+        b.fx.pop = Math.max(b.fx.pop, 1);
+        SND.tick(ev.newTier);
+      }
+      return;
+    }
+    if (ev.type === 'loss') {
+      const Lold = LOOK[ev.oldTier];
+      const lost = ev.oldV - ev.newV, n = Math.abs(ev.val);
+      if (lost <= 0) {   // шар уже на ×1 — ниже не опускается
+        ring(ev.x, ev.y, 8, 26, NEG, 0.3, 2);
+        hitLabel(b);
+        SND.down(false);
+        return;
+      }
+      hitLabel(b);
+      ring(ev.x, ev.y, 8, ev.newTier < ev.oldTier ? 70 : 34, NEG, 0.55, ev.newTier < ev.oldTier ? 5 : 3);
+      b.fx.crack = ev.newTier < ev.oldTier ? 1.1 : 0.55; b.fx.dim = 1; b.fx.pop = -0.6;
+      if (ev.newTier < ev.oldTier) {
+        // деградация: металл осыпается осколками, хвост отваливается (без подписей — только цвет)
+        shards(ev.x, ev.y, 14 + ev.oldTier * 3, Lold, 300);
+        if (b.fx.trail.length > 2 && LOOK[ev.oldTier].trail > LOOK[ev.newTier].trail)
+          FX.dropped.push({ pts: b.fx.trail.slice(), look: Lold, tier: ev.oldTier, life: 0.9, max: 0.9 });
+        b.fx.trail.length = 0;
+        FX.shake = Math.min(9, 3 + ev.oldTier * 1.5);
+        SND.down(true);
+      } else {
+        shards(ev.x, ev.y, 5, Lold, 180);
+        SND.down(false);
+      }
+      return;
+    }
+    if (ev.type === 'hole') {
+      b.fx.endT = 0;
+      if (ev.green) {
+        S.won += ev.payout; S.balance += ev.payout;
+        burst(ev.x, E.HOLE_Y - 6, 22, '#ffd54a', 340, 0.9, 3, 500);
+        burst(ev.x, E.HOLE_Y - 6, 10, '#4ade80', 260, 0.7, 2.5, 500);
+        floater(ev.x, E.HOLE_Y - 34, '+' + fmtM(ev.payout), '#7dffa8', 15, 1.5, true);
+        SND.win();
+      } else {
+        shards(ev.x, E.HOLE_Y - 6, 12, LOOK[b.tier], 220);
+        floater(ev.x, E.HOLE_Y - 30, '0', '#ff6b6b', 16, 1.2, true);
+        SND.lose();
+      }
+    }
+  }
+
+  // ---------- запуск серии ----------
+  // Преграды входа (вертушки, челнок) крутятся непрерывно: новая серия подхватывает их текущее положение,
+  // поэтому где окажется лопасть в момент прилёта шара, зависит от мгновения нажатия «Запуск».
+  function carryMovers(from, to) {
+    if (!from) return;
+    for (const m of to.table.movers) {
+      const o = from.table.movers.find(x => x.id === m.id); if (!o) continue;
+      if (m.kind === 'spin') { m.ang = o.ang; m.om = o.om; }
+      else { m.ph = o.ph + o.fr * from.t; m.fr = o.fr; m.x = o.x; }
+    }
+  }
+  function launch() {
+    if (S.phase === 'flying') return;
+    const inp = readInputs(); if (!inp.ok) { renderUI(); return; }
+    audio(); if (ac && ac.state === 'suspended') ac.resume();
+    const bet = inp.bet, count = inp.count, stake = bet * count;   // каждый шар = одна ставка
+    if (S.balance + 1e-9 < stake) return;
+    S.balance = +(S.balance - stake).toFixed(2);
+    const prev = S.world || idle;
+    S.world = E.createWorld(seed++, S.level);
+    carryMovers(prev, S.world);
+    E.launchVolley(S.world, count, bet);
+    S.world.balls.forEach(b => b.fx = { pop: 0, crack: 0, dim: 0, trail: [] });
+    S.stake = stake; S.won = 0; S.phase = 'flying'; FX.banner = null; FX.fireworks = 0;
+    buildChips();
+    renderUI();
+  }
+  function finishVolley() {
+    S.phase = 'result'; S.resultT = 0;
+    const plus = S.won > S.stake + 1e-9;
+    if (plus) { FX.fireworks = 2.2; SND.salute(); FX.banner = { text: `СЕРИЯ В ПЛЮСЕ  +${fmtM(S.won - S.stake)}`, color: '#7dffa8', t: 0 }; }
+    else FX.banner = { text: S.won > 0 ? `Выиграно ${fmtM(S.won)} из ${fmtM(S.stake)}` : 'Все шары сгорели', color: S.won > 0 ? '#ffe08a' : '#ff8a8a', t: 0 };
+    renderUI();
+  }
+
+  // ---------- отрисовка стола ----------
+  let plungerAnim = 0;
+  function drawTable(t) {
+    const T = (S.world || idle).table;
+    // фон-плейфилд
+    const g = ctx.createLinearGradient(0, 0, 0, E.H);
+    g.addColorStop(0, '#120c2c'); g.addColorStop(0.55, '#0c1430'); g.addColorStop(1, '#081022');
+    ctx.fillStyle = '#05040c'; ctx.fillRect(0, 0, E.W, E.H);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(270, 262, 250, Math.PI, 0); ctx.lineTo(520, 900); ctx.lineTo(20, 900); ctx.closePath();
+    ctx.fillStyle = g; ctx.fill(); ctx.clip();
+    // декоративные вставки-стрелки и сетка
+    ctx.globalAlpha = 0.07; ctx.strokeStyle = '#8fb7ff'; ctx.lineWidth = 1;
+    for (let y = 40; y < 900; y += 30) { ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(482, y); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.font = '700 20px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(160,140,255,0.08)'; ctx.fillText('ПИНБОЛ · КРАШ', 251, 260);   // ниже рельса челнока
+    ctx.restore();
+
+    // стенки и арка — неон
+    ctx.save(); ctx.lineCap = 'round';
+    ctx.shadowColor = '#3fb8ff'; ctx.shadowBlur = 10; ctx.strokeStyle = '#59c8ff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(20, 900); ctx.lineTo(20, 262); ctx.arc(270, 262, 250, Math.PI, 0); ctx.lineTo(520, 900); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(E.SEP_X, 318); ctx.lineTo(E.SEP_X, 900); ctx.stroke();
+    ctx.restore();
+    // плунжер
+    const pc = 893 + plungerAnim * 0; const comp = Math.max(0, plungerAnim) * 14;
+    ctx.save(); ctx.strokeStyle = '#8b97a8'; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i <= 8; i++) { const yy = pc + 2 + i * (5 - comp / 10); ctx.lineTo(E.LANE_X + (i % 2 ? 7 : -7), Math.min(899, yy)); }
+    ctx.stroke(); ctx.fillStyle = '#c9d2de'; ctx.fillRect(E.SEP_X + 3, pc - 1 + 0, 520 - E.SEP_X - 6, 4); ctx.restore();
+
+    // слингшоты
+    for (const s of T.segs) {
+      if (s.kind !== 'sling') continue;
+      const left = s.x1 < 250;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.lineTo(left ? 22 : 480, 690); ctx.closePath();
+      ctx.fillStyle = 'rgba(70,120,220,0.18)'; ctx.fill();
+      ctx.shadowColor = '#7fd7ff'; ctx.shadowBlur = 6 + s.flash * 20;
+      ctx.strokeStyle = s.flash > 0.05 ? '#ffffff' : '#7fd7ff'; ctx.lineWidth = 4 + s.flash * 3;
+      ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
+      ctx.restore();
+      s.flash = Math.max(0, s.flash - 0.06);
+    }
+    // лунки
+    for (let i = 0; i < T.holes.length; i++) {
+      const h = T.holes[i], w = h.x1 - h.x0;
+      if (h.black) { drawBlackHole(h, t); continue; }
+      const base = h.green ? [22, 163, 74] : [185, 28, 28];
+      const f = h.flash;
+      const gr = ctx.createLinearGradient(0, E.HOLE_TOP, 0, 900);
+      gr.addColorStop(0, `rgba(${base},${0.25 + f * 0.6})`); gr.addColorStop(1, `rgba(${base},${0.75 + f * 0.25})`);
+      ctx.fillStyle = gr; ctx.fillRect(h.x0 + 2, E.HOLE_TOP, w - 4, 900 - E.HOLE_TOP);
+      ctx.save(); ctx.shadowColor = h.green ? '#4ade80' : '#ff4d4d'; ctx.shadowBlur = 8 + f * 26;
+      ctx.fillStyle = h.green ? '#86efac' : '#fca5a5';
+      ctx.font = '800 15px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(h.green ? '×V' : '×0', (h.x0 + h.x1) / 2, 880);
+      ctx.font = '700 8px "Segoe UI", system-ui, sans-serif';
+      ctx.fillText(h.green ? 'ВЫПЛАТА' : 'СГОРАЕТ', (h.x0 + h.x1) / 2, 893);
+      ctx.restore();
+      h.flash = Math.max(0, h.flash - 0.025);
+    }
+    // круглые элементы
+    for (const c of T.circles) drawElement(c, t);
+    drawMovers(T);
+  }
+
+  // Чёрная дыра в центральной лунке: воронка с вращающимся фиолетовым диском и спиралью притяжения над ней
+  function drawBlackHole(h, t) {
+    const f = h.flash, x = E.BH_X, y = E.BH_Y;
+    ctx.save();
+    ctx.fillStyle = '#05020c'; ctx.fillRect(h.x0 + 2, E.HOLE_TOP, h.x1 - h.x0 - 4, 900 - E.HOLE_TOP);
+    // спиральные рукава зоны притяжения (над лункой, между гвоздиками)
+    ctx.beginPath(); ctx.rect(20, E.BH_Y - E.BH_R, E.SEP_X - 20, E.BH_R); ctx.clip();
+    ctx.lineWidth = 1.6;
+    for (let k = 0; k < 4; k++) {
+      ctx.beginPath();
+      for (let s = 0; s <= 40; s++) {
+        const q = s / 40, a = -t * 2.2 + k * Math.PI / 2 + q * 4.2, r = 18 + q * (E.BH_R - 18);
+        ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.82);
+      }
+      ctx.strokeStyle = `rgba(176,124,255,${0.22 + f * 0.4})`; ctx.stroke();
+    }
+    ctx.restore(); ctx.save();
+    // аккреционный диск
+    ctx.shadowColor = BH; ctx.shadowBlur = 18 + f * 30;
+    const g = ctx.createRadialGradient(x, y, 4, x, y, 25);
+    g.addColorStop(0, '#000'); g.addColorStop(0.55, '#000'); g.addColorStop(0.72, f > 0.1 ? '#ffd6ff' : '#9b5cff'); g.addColorStop(0.86, '#ff9a5a'); g.addColorStop(1, 'rgba(120,60,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 25 + f * 4, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (let k = 0; k < 3; k++) {
+      const a = t * 3.4 + k * 2.09;
+      ctx.strokeStyle = 'rgba(255,214,255,0.8)'; ctx.beginPath(); ctx.arc(x, y, 18, a, a + 1.1); ctx.stroke();
+    }
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e3ccff'; ctx.font = '800 8px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('ПОРТАЛ ↑', x, 897);
+    ctx.restore();
+    h.flash = Math.max(0, h.flash - 0.025);
+  }
+  // Белая дыра: выход портала, ездит влево-вправо по рельсу. Шар сквозь неё пролетает свободно.
+  function drawWhiteHole(m, t) {
+    const f = m.flash || 0;
+    ctx.strokeStyle = 'rgba(223,244,255,0.2)'; ctx.lineWidth = 2; ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(m.x0 - m.amp, m.y); ctx.lineTo(m.x0 + m.amp, m.y); ctx.stroke(); ctx.setLineDash([]);
+    // лучи наружу — «выталкивает», в противовес спирали чёрной дыры
+    ctx.lineCap = 'round'; ctx.lineWidth = 2;
+    for (let k = 0; k < 8; k++) {
+      const a = t * 1.6 + k * Math.PI / 4, q = (t * 1.3 + k * 0.37) % 1;
+      ctx.strokeStyle = `rgba(200,236,255,${0.65 * (1 - q)})`;
+      ctx.beginPath(); ctx.moveTo(m.x + Math.cos(a) * (m.r + 2 + q * 10), m.y + Math.sin(a) * (m.r + 2 + q * 10));
+      ctx.lineTo(m.x + Math.cos(a) * (m.r + 7 + q * 14), m.y + Math.sin(a) * (m.r + 7 + q * 14)); ctx.stroke();
+    }
+    ctx.shadowColor = '#9fdcff'; ctx.shadowBlur = 18 + f * 34;
+    const g = ctx.createRadialGradient(m.x, m.y, 1, m.x, m.y, m.r + f * 5);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.45, '#f4fbff'); g.addColorStop(0.8, '#8fd3ff'); g.addColorStop(1, '#2f7fd0');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(m.x, m.y, m.r + f * 5, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(223,244,255,0.75)'; ctx.font = '800 9px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.fillText('БЕЛАЯ ДЫРА', m.x, m.y + m.r + 14);
+  }
+
+  // Преграды: калитка дорожки, вертушки, мельницы и челнок. Цвет — ледяной циан: нейтральны к множителю.
+  const MOV = '#5ff0ff';
+  function drawMovers(T) {
+    const gate = T.segs.find(s => s.kind === 'gate');
+    if (gate) {
+      ctx.save(); ctx.strokeStyle = '#9fb3c8'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(gate.x1, gate.y1); ctx.lineTo(gate.x2, gate.y2); ctx.stroke(); ctx.restore();
+    }
+    for (const m of T.movers) {
+      const f = m.flash || 0;
+      ctx.save();
+      if (m.kind === 'spin') {
+        // круг хода лопасти — подсказка, что элемент вращается
+        ctx.strokeStyle = 'rgba(95,240,255,0.16)'; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+        ctx.beginPath(); ctx.arc(m.cx, m.cy, m.len, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        const ex = Math.cos(m.ang) * m.len, ey = Math.sin(m.ang) * m.len;
+        ctx.shadowColor = MOV; ctx.shadowBlur = 10 + f * 24; ctx.lineCap = 'round';
+        ctx.strokeStyle = f > 0.1 ? '#ffffff' : '#c8faff'; ctx.lineWidth = 6 + f * 2;
+        ctx.beginPath(); ctx.moveTo(m.cx - ex, m.cy - ey); ctx.lineTo(m.cx + ex, m.cy + ey); ctx.stroke();
+        ctx.strokeStyle = MOV; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(m.cx - ex, m.cy - ey); ctx.lineTo(m.cx + ex, m.cy + ey); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.fillStyle = '#0d2a33'; ctx.strokeStyle = MOV; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(m.cx, m.cy, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (m.kind === 'white') {
+        drawWhiteHole(m, performance.now() / 1000);
+      } else {
+        // рельс челнока и сам челнок со стрелками хода
+        ctx.strokeStyle = 'rgba(95,240,255,0.18)'; ctx.lineWidth = 2; ctx.setLineDash([4, 6]);
+        ctx.beginPath(); ctx.moveTo(m.x0 - m.amp, m.y); ctx.lineTo(m.x0 + m.amp, m.y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.shadowColor = MOV; ctx.shadowBlur = 12 + f * 26;
+        const g = ctx.createRadialGradient(m.x - 4, m.y - 4, 1, m.x, m.y, m.r);
+        g.addColorStop(0, '#f2feff'); g.addColorStop(0.5, f > 0.1 ? '#ffffff' : '#7ff4ff'); g.addColorStop(1, '#0e7f99');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.fillStyle = '#063946'; ctx.font = '900 13px "Segoe UI", system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('‹›', m.x, m.y + 0.5);
+      }
+      ctx.restore();
+      m.flash = Math.max(0, f - 0.06);
+    }
+  }
+
+  function drawElement(c, t) {
+    const f = c.flash;
+    ctx.save();
+    if (c.kind === 'pin' || c.kind === 'post') {
+      ctx.shadowColor = '#7fd7ff'; ctx.shadowBlur = 4 + f * 18;
+      const g = ctx.createRadialGradient(c.x - c.r * 0.3, c.y - c.r * 0.3, 1, c.x, c.y, c.r);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(1, f > 0.1 ? '#bff0ff' : c.kind === 'post' ? '#6b7a90' : '#4f8fd6');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.r + f * 2, 0, Math.PI * 2); ctx.fill();
+    } else if (c.kind === 'bump') {
+      // активный бампер: «+0.5x» голубой, «+1x» оранжевый, «+2x» золотой, «+3x» розовый, «+5x» — самый крупный, радужный обод.
+      // Чем больше надпись, тем крупнее бампер. Надпись — сколько иксов он прибавляет.
+      const big = c.val >= 2, B = BUMP[c.val];
+      ctx.shadowColor = B.rim; ctx.shadowBlur = 12 + f * 30;
+      ctx.fillStyle = '#1b1530'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r + 4 + f * 4, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = c.val >= 5 ? 5 : big ? 3.5 : 3;
+      if (B.rainbow) {
+        const cg = ctx.createConicGradient ? ctx.createConicGradient(t * 1.5, c.x, c.y) : null;
+        if (cg) { for (let k = 0; k <= 6; k++) cg.addColorStop(k / 6, hueCol(k * 60, 100, 65)); ctx.strokeStyle = cg; } else ctx.strokeStyle = hueCol(t * 120, 100, 65);
+        ctx.shadowColor = hueCol(t * 120, 100, 65);
+      } else ctx.strokeStyle = B.rim;
+      ctx.stroke();
+      const g = ctx.createRadialGradient(c.x - c.r * 0.35, c.y - c.r * 0.35, 2, c.x, c.y, c.r);
+      g.addColorStop(0, '#fffbe8'); g.addColorStop(0.45, f > 0.1 ? '#fff' : B.cap); g.addColorStop(1, B.dark);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.r - 2, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      bumpLabel(c, '+' + c.val + 'x', '#2a1600', 'rgba(255,248,225,0.55)');
+      if (f > 0.02) { ctx.globalAlpha = f; ctx.strokeStyle = B.rainbow ? '#fff' : B.rim; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(c.x, c.y, c.r + 6 + (1 - f) * 18, 0, Math.PI * 2); ctx.stroke(); }
+    } else if (c.kind === 'neg') {
+      // отнимающий бампер: фиолетовый, с шипами. «−1x» — малый, «−2x» — крупнее, темнее и с более длинными шипами.
+      const big = c.val <= -2, spikes = big ? 12 : 10, rot = t * (big ? 0.45 : 0.7);
+      ctx.shadowColor = NEG; ctx.shadowBlur = 10 + f * 30;
+      ctx.fillStyle = f > 0.1 ? '#c9a6ff' : big ? '#5a2bc0' : '#7c4fe0';
+      ctx.beginPath();
+      for (let i = 0; i < spikes * 2; i++) {
+        const a = rot + i * Math.PI / spikes, rr = i % 2 ? c.r + 1 : c.r + (big ? 10 : 7) + f * 6;
+        ctx.lineTo(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr);
+      }
+      ctx.closePath(); ctx.fill();
+      const g = ctx.createRadialGradient(c.x - 5, c.y - 5, 1, c.x, c.y, c.r);
+      g.addColorStop(0, big ? '#4a2a80' : '#6a48a3'); g.addColorStop(1, NEG_DARK);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.r - 1, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      bumpLabel(c, '−' + Math.abs(c.val) + 'x', '#f1e8ff', 'rgba(20,6,40,0.7)');
+    }
+    ctx.restore();
+    c.flash = Math.max(0, c.flash - 0.05);
+  }
+
+  // ---------- шар ----------
+  function drawTrail(c, pts, look, tier, t, alpha = 1) {
+    if (pts.length < 2) return;
+    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let i = 1; i < pts.length; i++) {
+      const k = i / pts.length;
+      c.strokeStyle = look.rainbow ? hueCol(t * 240 + i * 14, 100, 62, k * 0.8 * alpha) : hexA(look.glow || look.base, k * 0.7 * alpha);
+      c.lineWidth = E.BR * 2 * k * (tier >= 5 ? 1 : 0.7);
+      c.beginPath(); c.moveTo(pts[i - 1][0], pts[i - 1][1]); c.lineTo(pts[i][0], pts[i][1]); c.stroke();
+    }
+    c.restore();
+  }
+  function hexA(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+  }
+  function drawBall(c, x, y, r, V, t, fx, label, big) {
+    const tier = E.tierOf(V), L = LOOK[tier];
+    c.save();
+    // свечение
+    if (L.glow) {
+      const gr = c.createRadialGradient(x, y, r * 0.6, x, y, r * (2.1 + tier * 0.18));
+      const gc = L.rainbow ? hueCol(t * 200, 100, 70, 0.55) : hexA(L.glow, 0.25 + tier * 0.05);
+      gr.addColorStop(0, gc); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = gr; c.beginPath(); c.arc(x, y, r * (2.1 + tier * 0.18), 0, Math.PI * 2); c.fill();
+    }
+    // тело
+    let base = L.base, dark = L.dark, light = L.light;
+    if (L.rainbow) { base = hueCol(t * 160, 95, 62); dark = hueCol(t * 160 + 120, 90, 35); light = '#ffffff'; }
+    const g = c.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    if (tier === 0) {
+      const pol = Math.min(1, (V - 1) / 2);                        // сталь полируется по мере роста
+      g.addColorStop(0, light); g.addColorStop(0.25 + pol * 0.2, base); g.addColorStop(1, dark);
+    } else { g.addColorStop(0, light); g.addColorStop(0.45, base); g.addColorStop(1, dark); }
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    // огранка бриллианта и выше
+    if (tier >= 4) {
+      c.strokeStyle = tier === 4 ? 'rgba(80,170,210,0.55)' : 'rgba(255,255,255,0.45)'; c.lineWidth = 0.8;
+      c.beginPath();
+      for (let i = 0; i < 6; i++) { const a = t * 1.5 + i * Math.PI / 3; c.moveTo(x, y); c.lineTo(x + Math.cos(a) * r * 0.95, y + Math.sin(a) * r * 0.95); }
+      c.stroke();
+      const tw = (Math.sin(t * 9 + x) + 1) / 2;
+      c.fillStyle = `rgba(255,255,255,${0.5 + tw * 0.5})`;
+      star(c, x + r * 0.45, y - r * 0.5, 1.5 + tw * 2.5);
+    }
+    // блик
+    c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.ellipse(x - r * 0.35, y - r * 0.42, r * 0.28, r * 0.17, -0.6, 0, Math.PI * 2); c.fill();
+    // ободок делений: сколько закрыто до следующей ступени
+    const d = E.divsOf(V);
+    c.lineWidth = 2; c.lineCap = 'butt';
+    if (d.total) {
+      const seg = Math.PI * 2 / d.total;
+      for (let i = 0; i < d.total; i++) {
+        c.strokeStyle = i < d.have ? (tier === 0 ? LOOK[1].ui : L.rainbow ? '#fff' : L.ui) : 'rgba(255,255,255,0.16)';
+        c.beginPath(); c.arc(x, y, r + 3, -Math.PI / 2 + i * seg + 0.08, -Math.PI / 2 + (i + 1) * seg - 0.08); c.stroke();
+      }
+    }
+    // трещины и потускнение после отнимающего бампера
+    if (fx && fx.dim > 0) {
+      c.fillStyle = `rgba(20,8,40,${fx.dim * 0.55})`; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    }
+    if (fx && fx.crack > 0) {
+      c.strokeStyle = `rgba(230,210,255,${Math.min(1, fx.crack)})`; c.lineWidth = 1.3;
+      c.beginPath();
+      c.moveTo(x - r * 0.1, y - r * 0.9); c.lineTo(x + r * 0.15, y - r * 0.2); c.lineTo(x - r * 0.3, y + r * 0.25); c.lineTo(x + r * 0.05, y + r * 0.9);
+      c.moveTo(x + r * 0.15, y - r * 0.2); c.lineTo(x + r * 0.8, y - r * 0.05);
+      c.moveTo(x - r * 0.3, y + r * 0.25); c.lineTo(x - r * 0.85, y + r * 0.35);
+      c.stroke();
+    }
+    c.restore();
+  }
+  // «×N» над шаром после удара: за первые 0,3 с подпрыгивает (×1 → ×1,5 → ×1), к концу секунды тает
+  function drawHitLabel(b, t) {
+    const L = LOOK[b.tier], a = 1 - b.fx.lbl / LBL_T;            // 0 → 1 за время жизни подписи
+    const k = 1 + 0.5 * Math.sin(Math.min(1, a / 0.3) * Math.PI);
+    const alpha = a < 0.6 ? 1 : Math.max(0, (1 - a) / 0.4);
+    const x = Math.max(30, Math.min(E.SEP_X - 22, b.x)), y = b.y - E.BR - 8;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.translate(x, y); ctx.scale(k, k);
+    ctx.font = '800 13px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    const txt = '×' + fmtX(b.V);
+    ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(5,4,15,0.9)'; ctx.strokeText(txt, 0, 0);
+    ctx.fillStyle = L.rainbow ? hueCol(t * 200, 100, 75) : (b.tier === 0 ? '#e8edf3' : L.ui); ctx.fillText(txt, 0, 0);
+    ctx.restore();
+  }
+  function star(c, x, y, s) {
+    c.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? s * 0.3 : s; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    c.closePath(); c.fill();
+  }
+
+  function drawBalls(t, dt) {
+    if (!S.world) return;
+    const live = S.world.balls.filter(b => b.state === 'live');
+    // очередь в пусковой дорожке
+    const queued = S.world.balls.filter(b => b.state === 'queued');
+    if (queued.length) {
+      drawBall(ctx, E.LANE_X, 893 - E.BR, E.BR, 1, t, null, null);
+      ctx.save(); ctx.fillStyle = '#b8c0c9'; ctx.font = '700 11px "Segoe UI", system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('×' + queued.length, E.LANE_X, 860); ctx.restore();
+    }
+    // хвосты сначала, затем тела — чтобы хвост не закрывал соседний шар
+    for (const b of live) {
+      const L = LOOK[b.tier], fx = b.fx;
+      fx.trail.push([b.x, b.y]);
+      const maxLen = L.trail;
+      while (fx.trail.length > maxLen) fx.trail.shift();
+      if (maxLen) drawTrail(ctx, fx.trail, L, b.tier, t);
+    }
+    for (const b of live) {
+      const fx = b.fx;
+      const s = 1 + Math.max(-0.25, fx.pop * 0.18);
+      drawBall(ctx, b.x, b.y, E.BR * s * (1 + b.tier * 0.05), b.V, t, fx, null);
+      if (fx.lbl > 0) { drawHitLabel(b, t); fx.lbl = Math.max(0, fx.lbl - dt); }
+      fx.pop *= Math.pow(0.02, dt); if (Math.abs(fx.pop) < 0.01) fx.pop = 0;
+      fx.crack = Math.max(0, fx.crack - dt); fx.dim = Math.max(0, fx.dim - dt * 1.2);
+    }
+    drawWarps(t);
+    // шар в зелёной лунке ещё мгновение лежит и светится
+    for (const b of S.world.balls) {
+      if (b.state !== 'done' || b.payout <= 0) continue;
+      b.fx.endT = (b.fx.endT || 0) + dt;
+      if (b.fx.endT > 1.4) continue;
+      ctx.save(); ctx.globalAlpha = 1 - b.fx.endT / 1.4;
+      drawBall(ctx, Math.max(E.BR + 22, Math.min(E.SEP_X - 12, b.x)), E.HOLE_Y + 6, E.BR, b.V, t, null, null);
+      ctx.restore();
+    }
+  }
+
+  // Шар в портале: первые 0,45 с закручивается в чёрную дыру и тает; последние 0,25 с белая дыра набухает перед выбросом
+  function drawWarps(t) {
+    const W = S.world, wh = W.table.movers.find(m => m.kind === 'white');
+    for (const b of W.balls) {
+      if (b.state !== 'warp') continue;
+      const k = 1 - (b.warpUntil - W.t) / E.WARP_T;           // 0 → 1 за время в портале
+      const q = Math.min(1, k / 0.55);
+      if (q < 1) {
+        const [sx, sy] = b.fx.warpFrom || [E.BH_X, E.BH_Y];
+        const a0 = Math.atan2(sy - E.BH_Y, sx - E.BH_X), r0 = Math.hypot(sx - E.BH_X, sy - E.BH_Y);
+        const a = a0 + q * Math.PI * 3, r = r0 * (1 - q);
+        ctx.save(); ctx.globalAlpha = 1 - q * 0.6;
+        drawBall(ctx, E.BH_X + Math.cos(a) * r, E.BH_Y + Math.sin(a) * r, E.BR * (1 - q * 0.75), b.V, t, null, null);
+        ctx.restore();
+      }
+      if (k > 0.7 && wh) {
+        const p = (k - 0.7) / 0.3;
+        ctx.save(); ctx.globalAlpha = p; ctx.strokeStyle = WH; ctx.lineWidth = 3; ctx.shadowColor = '#9fdcff'; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.arc(wh.x, wh.y, wh.r + 4 + (1 - p) * 26, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+    }
+  }
+  function drawFX(dt, t) {
+    for (const d of FX.dropped) { d.life -= dt; d.pts.forEach(p => { p[1] += 60 * dt; }); drawTrail(ctx, d.pts, d.look, d.tier, t, Math.max(0, d.life / d.max)); }
+    FX.dropped = FX.dropped.filter(d => d.life > 0);
+    for (const r of FX.rings) {
+      r.life -= dt; const k = 1 - r.life / r.max;
+      ctx.save(); ctx.globalAlpha = Math.max(0, r.life / r.max); ctx.strokeStyle = r.color; ctx.lineWidth = r.width * (1 - k * 0.6);
+      ctx.shadowColor = r.color; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r0 + (r.r1 - r.r0) * (1 - Math.pow(1 - k, 3)), 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+    FX.rings = FX.rings.filter(r => r.life > 0);
+    for (const p of FX.parts) {
+      p.life -= dt; p.vy += p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.99;
+      ctx.save(); ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.color;
+      if (p.shard) { p.rot += p.vr * dt; ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.beginPath(); ctx.moveTo(-p.size, -p.size * 0.5); ctx.lineTo(p.size, 0); ctx.lineTo(-p.size * 0.3, p.size * 0.7); ctx.closePath(); ctx.fill(); }
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    }
+    FX.parts = FX.parts.filter(p => p.life > 0);
+    for (const f of FX.floats) {
+      f.life -= dt; const k = 1 - f.life / f.max;
+      ctx.save(); ctx.globalAlpha = Math.min(1, f.life / f.max * 2);
+      ctx.font = `${f.bold ? 800 : 700} ${f.size}px "Segoe UI", system-ui, sans-serif`; ctx.textAlign = 'center';
+      const y = f.y - (f.max - f.life) * FLOAT_V, hw = ctx.measureText(f.text).width / 2;
+      f.x = Math.max(26 + hw, Math.min(478 - hw, f.x));       // подпись не уходит за борт
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(5,4,15,0.9)'; ctx.strokeText(f.text, f.x, y);
+      ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y); ctx.restore();
+    }
+    FX.floats = FX.floats.filter(f => f.life > 0);
+    // салют залпа — только когда выигрыш превысил ставку залпа
+    if (FX.fireworks > 0) {
+      FX.fireworks -= dt;
+      if (Math.random() < dt * 7) {
+        const x = 60 + Math.random() * 380, y = 120 + Math.random() * 300, h = Math.random() * 360;
+        burst(x, y, 34, hueCol(h, 100, 65), 260, 1.1, 2.6, 160); ring(x, y, 4, 60, hueCol(h + 40, 100, 70), 0.6, 2);
+      }
+    }
+    if (FX.flashScreen > 0) { ctx.fillStyle = `rgba(255,255,255,${FX.flashScreen * 0.25})`; ctx.fillRect(0, 0, E.W, E.H); FX.flashScreen -= dt; }
+    if (FX.banner) {
+      const B = FX.banner; B.t += dt;
+      const a = Math.min(1, B.t * 4);
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.fillStyle = 'rgba(8,6,20,0.82)'; roundRect(ctx, 71, 150, 360, 58, 14); ctx.fill();
+      ctx.strokeStyle = B.color; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = '800 21px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = B.color; ctx.fillText(B.text, 251, 179); ctx.restore();
+    }
+  }
+  // Надпись на бампере: крупная, по центру, с тонкой обводкой — знак и число читаются без цвета
+  function bumpLabel(c, text, fill, outline) {
+    let size = Math.round(c.r * 0.72);
+    ctx.font = `900 ${size}px "Segoe UI", system-ui, sans-serif`;
+    // длинная надпись «+0.5x» на малом бампере может занять почти весь диаметр — иначе шрифт ужимается до нечитаемого
+    while (ctx.measureText(text).width > c.r * (text.length > 4 ? 1.9 : 1.6) && size > 9) { size--; ctx.font = `900 ${size}px "Segoe UI", system-ui, sans-serif`; }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 2.5; ctx.strokeStyle = outline; ctx.strokeText(text, c.x, c.y + 1);
+    ctx.fillStyle = fill; ctx.fillText(text, c.x, c.y + 1);
+  }
+  function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+  // ---------- лестница металлов (легенда) ----------
+  function drawLadder(t) {
+    const w = lad.width / dpr, h = LAD_H;
+    lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lctx.clearRect(0, 0, w, h);
+    const n = E.TIERS.length, step = w / 4;
+    for (let i = 0; i < n; i++) {
+      const T = E.TIERS[i], x = step * (i % 4 + 0.5), y = 26 + Math.floor(i / 4) * 74;
+      const V = T.divs ? T.min + Math.floor(((t * 0.5) % 1) * T.divs) : T.min;
+      const L = LOOK[i];
+      if (L.trail) {
+        const pts = []; for (let k = 0; k < 10; k++) pts.push([x - (10 - k) * 3.2, y + Math.sin(t * 4 + k * 0.5) * 2]);
+        pts.push([x, y]); drawTrail(lctx, pts, L, i, t);
+      }
+      drawBall(lctx, x, y, 11, V, t, null, null);
+      // круг 5: без названий металлов — цвет шара и диапазон иксов
+      lctx.textAlign = 'center'; lctx.font = '700 11px "Segoe UI", system-ui, sans-serif';
+      lctx.fillStyle = L.rainbow ? hueCol(t * 200, 100, 75) : L.ui;
+      lctx.fillText(T.divs ? (T.max - 1 > T.min ? `×${T.min} … ×${T.max - 1}` : `×${T.min}`) : 'от ×' + T.min, x, y + 34);
+    }
+  }
+
+  // ---------- интерфейс ----------
+  function buildChips() {
+    const box = $('chips'); box.innerHTML = '';
+    S.world.balls.forEach(b => {
+      const d = document.createElement('div'); d.className = 'chip'; d.id = 'chip' + b.id;
+      d.innerHTML = `<i></i><span>×1</span>`; box.appendChild(d);
+    });
+  }
+  const CHIP_BG = LOOK.map((L, i) => i === 7 ? 'conic-gradient(#ff5af4,#36e2ff,#ffd36b,#ff5af4)' : `radial-gradient(circle at 35% 30%, ${L.light}, ${L.base} 45%, ${L.dark})`);
+  function updateChips() {
+    if (!S.world) return;
+    for (const b of S.world.balls) {
+      const el = $('chip' + b.id); if (!el) continue;
+      const cls = 'chip' + (b.state === 'done' ? (b.payout > 0 ? ' win' : ' lose') : b.state === 'queued' ? ' wait' : b.state === 'warp' ? ' warp' : '');
+      const txt = b.state === 'done' ? (b.payout > 0 ? '+' + fmtM(b.payout) : '0') : '×' + fmtX(b.V);
+      const key = cls + txt + b.tier;
+      if (el._k === key) continue; el._k = key;
+      el.className = cls; el.lastChild.textContent = txt;
+      el.firstChild.style.background = CHIP_BG[b.tier];
+      el.title = `Шар ${b.idx + 1}: ×${fmtX(b.V)}`;
+    }
+  }
+  // Поля ставки и количества: пустое, дробное, нулевое или вне диапазона значение запуск не пускает.
+  function readInputs() {
+    const bs = $('bet').value.trim(), cs = $('count').value.trim();
+    const bet = /^\d+$/.test(bs) ? +bs : NaN, count = /^\d+$/.test(cs) ? +cs : NaN;
+    const betOk = bet >= BET_MIN && bet <= BET_MAX, countOk = count >= BALLS_MIN && count <= BALLS_MAX;
+    const errs = [];
+    if (!betOk) errs.push(`Ставка за шар — целое число от ${BET_MIN} до ${BET_MAX}`);
+    if (!countOk) errs.push(`Количество шаров — целое число от ${BALLS_MIN} до ${BALLS_MAX}`);
+    return { bet, count, betOk, countOk, ok: betOk && countOk, errs };
+  }
+  function renderUI() {
+    const inp = readInputs(), flying = S.phase === 'flying';
+    if (inp.betOk) S.bet = inp.bet;
+    if (inp.countOk) S.count = inp.count;
+    $('balance').textContent = fmtM(S.balance);
+    $('bet').classList.toggle('bad', !inp.betOk); $('count').classList.toggle('bad', !inp.countOk);
+    $('err').textContent = inp.errs.join('. ');
+    const stake = inp.bet * inp.count;
+    $('total').textContent = inp.ok ? `${fmtM(inp.bet)} × ${inp.count} ${plural(inp.count, 'шар', 'шара', 'шаров')} = ${fmtM(stake)}` : '—';
+    const lv = E.LEVELS[S.level];
+    $('negNote').textContent = `отрицательных бамперов: ${lv.neg}`;
+    for (const b of $('level').children) { const on = +b.dataset.i === S.level; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.disabled = flying; }
+    const btn = $('go');
+    const lack = inp.ok && S.balance + 1e-9 < stake;
+    const broke = S.balance < BET_MIN;
+    btn.disabled = flying || !inp.ok || (lack && !broke);
+    btn.textContent = flying ? 'Шары в полёте…' : !inp.ok ? 'Проверь ставку и шары' : lack ? (broke ? 'Пополнить демо-баланс' : 'Не хватает баланса')
+      : `ЗАПУСК · ${inp.count} ${plural(inp.count, 'шар', 'шара', 'шаров')} · ${fmtM(stake)}`;
+    for (const id of ['betMinus', 'betPlus', 'cntMinus', 'cntPlus', 'bet', 'count']) $(id).disabled = flying;
+    $('snd').textContent = S.sound ? '🔊 Звук' : '🔈 Без звука';
+  }
+  function buildLevels() {
+    $('level').innerHTML = '';
+    E.LEVELS.forEach((L, i) => {
+      const b = document.createElement('button'); b.dataset.i = i; b.textContent = L.name; b.setAttribute('role', 'radio');
+      b.title = `${L.name}: отрицательных бамперов — ${L.neg}`;
+      b.onclick = () => setLevel(i); $('level').appendChild(b);
+    });
+  }
+  // Смена сложности до запуска сразу перестраивает поле — видно, сколько отрицательных бамперов будет в серии.
+  function setLevel(i) {
+    if (S.phase === 'flying' || i === S.level) return;
+    S.level = i;
+    const prev = S.world || idle;
+    idle = E.createWorld(seed++, S.level); carryMovers(prev, idle);
+    S.world = null; $('chips').innerHTML = ''; FX.banner = null;
+    renderUI();
+  }
+  const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
+  // Круг 4: панель «Выигрыш серии / Накоплено на поле» над столом убрана по просьбе владельца — остался прогресс в панели
+  function updateCounter() {
+    if (!S.world) S.won = 0;
+    // прогресс серии: сколько шаров уже в лунках
+    let prog = '';
+    if (S.world) {
+      const done = S.world.balls.filter(b => b.state === 'done').length, all = S.world.balls.length;
+      prog = `Завершено: <b>${done}</b> из <b>${all}</b>`;
+    }
+    const pe = $('prog'); if (pe._k !== prog) { pe._k = prog; pe.innerHTML = prog; }
+  }
+
+  $('go').onclick = () => { if (S.balance < BET_MIN && S.phase !== 'flying') { S.balance = 1000; renderUI(); return; } launch(); };
+  // «−»/«+»: шаг 1; если в поле мусор — отталкиваемся от последнего верного значения
+  const nudge = (id, key, d, lo, hi) => {
+    const inp = readInputs(), cur = key === 'bet' ? (inp.betOk ? inp.bet : S.bet) : (inp.countOk ? inp.count : S.count);
+    $(id).value = Math.max(lo, Math.min(hi, cur + d)); renderUI();
+  };
+  $('betMinus').onclick = () => nudge('bet', 'bet', -1, BET_MIN, BET_MAX);
+  $('betPlus').onclick = () => nudge('bet', 'bet', +1, BET_MIN, BET_MAX);
+  $('cntMinus').onclick = () => nudge('count', 'count', -1, BALLS_MIN, BALLS_MAX);
+  $('cntPlus').onclick = () => nudge('count', 'count', +1, BALLS_MIN, BALLS_MAX);
+  for (const id of ['bet', 'count']) {
+    $(id).oninput = renderUI;
+    $(id).onblur = () => { const v = $(id).value.trim(); if (/^\d+$/.test(v)) $(id).value = +v; renderUI(); };   // «007» → «7»
+    $(id).onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $(id).blur(); } };
+  }
+  $('snd').onclick = () => { S.sound = !S.sound; audio(); renderUI(); };
+  window.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); $('go').click(); } });
+
+  // ---------- главный цикл ----------
+  let idle = E.createWorld(seed++, S.level);   // стол до первого запуска и после смены сложности
+  let last = performance.now(), acc = 0, T0 = performance.now();
+  const STEP = 1 / 240;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const t = (now - T0) / 1000;
+    if (S.world && S.phase === 'flying' && S.orbit) {
+      // тестовый режим для снимков: шары кружат на месте, физика стоит
+      S.world.balls.filter(b => b.state === 'live').forEach((b, i) => { const a = t * 3 + i; b.x = S.orbit.cx + Math.cos(a) * S.orbit.r; b.y = S.orbit.cy + Math.sin(a) * S.orbit.r * 0.6; });
+    } else if (S.world && S.phase === 'flying') {
+      acc += dt;
+      while (acc >= STEP) {
+        E.step(S.world, STEP); acc -= STEP;
+        for (const ev of S.world.events) onEvent(ev);
+        S.world.events.length = 0;
+      }
+      if (E.allDone(S.world)) finishVolley();
+    } else {
+      // вне серии шаров нет — шаг мира только крутит вертушки и водит челнок
+      const view = S.world || idle;
+      E.step(view, dt); view.events.length = 0;
+    }
+    if (S.phase === 'result') { S.resultT += dt; if (S.resultT > 1.2 && S.phase !== 'ready') { S.phase = 'ready'; renderUI(); } }
+    plungerAnim = Math.max(0, plungerAnim - dt * 4);
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+    ctx.save();
+    if (FX.shake > 0) { ctx.translate((Math.random() - 0.5) * FX.shake, (Math.random() - 0.5) * FX.shake); FX.shake = Math.max(0, FX.shake - dt * 30); }
+    drawTable(t);
+    drawBalls(t, dt);
+    drawFX(dt, t);
+    ctx.restore();
+    drawLadder(t);
+    updateChips(); updateCounter();
+    requestAnimationFrame(frame);
+  }
+
+  // Хуки для автопроверки (скриншоты состояний)
+  window.PB = {
+    S, FX, launch, onEvent, engine: E,
+    setCount(n) { $('count').value = n; renderUI(); },
+    setBet(n) { $('bet').value = n; renderUI(); },
+    setLevel, readInputs, get idle() { return idle; },
+    // поставить шару ценность и сыграть событие так же, как от бампера
+    force(ballIdx, V, neg) {
+      const b = S.world.balls[ballIdx]; const oldV = b.V, oldTier = b.tier;
+      b.V = V; b.tier = E.tierOf(V);
+      const val = neg ? -Math.max(1, Math.round(oldV - V)) : Math.max(1, Math.round(V - oldV));
+      onEvent({ type: neg ? 'loss' : 'gain', ball: b, el: { kind: neg ? 'neg' : 'bump', x: b.x, y: b.y, r: 12 }, val, oldV, newV: V, oldTier, newTier: b.tier, x: b.x, y: b.y });
+    },
+  };
+
+  buildLevels(); layout(); renderUI();
+  requestAnimationFrame(frame);
+})();
+
+</script>
+</body>
+</html>
