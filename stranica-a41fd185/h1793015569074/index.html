@@ -21,7 +21,8 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth;scroll-snap-type:y proximity}
-  body{background:var(--cream);color:var(--ink);font-family:'Jost',sans-serif;font-weight:300;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  body{background:var(--cream);color:var(--ink);font-family:'Jost',sans-serif;font-weight:300;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;font-variant-numeric:lining-nums}
+  h1,h2,h3,.num,.sum,.k,.dates{font-variant-numeric:lining-nums}
   a{color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
 
@@ -55,7 +56,8 @@
   .wave.c{margin:28px auto}
 
   /* леопардовые детали */
-  .spots{height:14px;width:100%;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='14' viewBox='0 0 120 14'%3E%3Cg fill='none' stroke='%233A3431' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M8 4c2-2 6-2 7 1M6 10c1 2 5 3 7 1'/%3E%3Cpath d='M38 3c3 0 5 2 5 4M33 9c1 2 4 3 6 2'/%3E%3Cpath d='M68 5c2-3 6-2 7 0M67 10c2 2 6 2 7-1'/%3E%3Cpath d='M98 3c3 1 4 3 4 5M93 8c0 3 3 4 5 4'/%3E%3C/g%3E%3Cg fill='%23C9935A'%3E%3Cellipse cx='10.5' cy='7' rx='2.6' ry='2'/%3E%3Cellipse cx='38' cy='7' rx='2.4' ry='2.1'/%3E%3Cellipse cx='70.5' cy='7.5' rx='2.6' ry='1.9'/%3E%3Cellipse cx='98' cy='7.5' rx='2.3' ry='2'/%3E%3C/g%3E%3C/svg%3E") repeat-x center/120px 14px;opacity:.75}
+  .divider{display:flex;align-items:center;gap:18px}
+  .divider span{flex:1;height:1px;background:var(--line)}
   .paw{display:inline-block;width:30px;height:30px;vertical-align:middle}
 
   /* обложка */
@@ -77,8 +79,8 @@
 
   /* коротко */
   .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:30px}
-  .facts div{padding:30px 22px;border-right:1px solid var(--line)}
-  .facts div:last-child{border-right:0}
+  .facts>div{padding:30px 22px;border-right:1px solid var(--line)}
+  .facts>div:last-child{border-right:0}
   .facts .k{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,3.6vw,50px);line-height:1;color:var(--ink)}
   .facts .v{font-size:14px;letter-spacing:.06em;color:var(--muted);margin-top:10px}
 
@@ -134,8 +136,8 @@
     .media .inset{width:46%;height:40%;right:-2%;bottom:-24px;border-width:7px}
     .day.rev .media .inset{left:-2%}
     .facts{grid-template-columns:1fr 1fr}
-    .facts div:nth-child(2){border-right:0}
-    .facts div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+    .facts>div:nth-child(2){border-right:0}
+    .facts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
     .cover{min-height:100vh}
   }
 </style>
@@ -182,7 +184,7 @@
       <div><div class="k">до 10</div><div class="v">девочек в группе,<br>по двое в номере</div></div>
       <div><div class="k">FLR</div><div class="v">встречаемся<br>в аэропорту Флоренции</div></div>
     </div>
-    <div class="spots" style="margin-top:40px"></div>
+    <div class="divider" style="margin-top:44px"><span></span><svg viewBox="0 0 40 40" width="22" height="22" aria-hidden="true"><g fill="#C9935A"><ellipse cx="20" cy="27" rx="8.5" ry="7.5"/><ellipse cx="9" cy="17" rx="3.4" ry="4.4" transform="rotate(-18 9 17)"/><ellipse cx="16" cy="10.5" rx="3.4" ry="4.6"/><ellipse cx="24.5" cy="10.5" rx="3.4" ry="4.6"/><ellipse cx="31.5" cy="17" rx="3.4" ry="4.4" transform="rotate(18 31.5 17)"/></g></svg><span></span></div>
   </div>
 </section>
 
@@ -241,7 +243,6 @@
   <div class="wrap day rev">
     <div class="media">
       <div class="main"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Lagotto_Romagnolo-truffle_hunting.jpg" alt="Лаготто ищет трюфель"></div>
-      <div class="inset"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Truffle_washed_and_cut.jpg" alt="Белый трюфель"></div>
     </div>
     <div>
       <div class="num">02</div>
@@ -291,7 +292,7 @@
 <section class="tint">
   <div class="wrap day">
     <div class="media">
-      <div class="main"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/2016_Vasari_Corridor_02.jpg/1920px-2016_Vasari_Corridor_02.jpg" alt="Коридор Вазари"></div>
+      <div class="main"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Ponte_Vecchio_from_Ponte_alle_Grazie.jpg/1920px-Ponte_Vecchio_from_Ponte_alle_Grazie.jpg" alt="Понте-Веккьо и коридор Вазари над ним"></div>
       <div class="inset"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/Jard%C3%ADn_de_B%C3%B3boli%2C_Florencia%2C_Italia%2C_2022-09-19%2C_DD_26.jpg/1920px-Jard%C3%ADn_de_B%C3%B3boli%2C_Florencia%2C_Italia%2C_2022-09-19%2C_DD_26.jpg" alt="Сады Боболи"></div>
     </div>
     <div>
@@ -337,7 +338,7 @@
     <div class="motto">Designed for you</div>
     <div class="motto2">Nothing to plan. Everything to feel.</div>
     <p>Мест немного: всего до десяти девочек. Хочешь с нами — просто напиши мне.</p>
-    <div class="spots" style="max-width:360px;margin:40px auto 0"></div>
+    <div class="divider" style="max-width:360px;margin:44px auto 0"><span></span><svg viewBox="0 0 40 40" width="22" height="22" aria-hidden="true"><g fill="#C9935A"><ellipse cx="20" cy="27" rx="8.5" ry="7.5"/><ellipse cx="9" cy="17" rx="3.4" ry="4.4" transform="rotate(-18 9 17)"/><ellipse cx="16" cy="10.5" rx="3.4" ry="4.6"/><ellipse cx="24.5" cy="10.5" rx="3.4" ry="4.6"/><ellipse cx="31.5" cy="17" rx="3.4" ry="4.4" transform="rotate(18 31.5 17)"/></g></svg><span></span></div>
   </div>
 </section>
 
@@ -350,12 +351,11 @@
   <a href="https://commons.wikimedia.org/wiki/File:Palazzo_portinari_salviati,_cortile_principale_02.jpg" target="_blank" rel="noopener">Palazzo Portinari Salviati</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Montalcino_001.jpg" target="_blank" rel="noopener">Montalcino</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Lagotto_Romagnolo-truffle_hunting.jpg" target="_blank" rel="noopener">Lagotto</a>,
-  <a href="https://commons.wikimedia.org/wiki/File:Truffle_washed_and_cut.jpg" target="_blank" rel="noopener">Tuber magnatum</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Piazza_dei_Ciompi_Loggia_del_Pesce_Florenz-1.jpg" target="_blank" rel="noopener">Piazza dei Ciompi</a>,
   <a href="https://commons.wikimedia.org/wiki/File:San_Miniato_al_Monte,_exterior,_Florencia,_Italia,_2019_01_cropped.jpg" target="_blank" rel="noopener">San Miniato al Monte</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Gio_ponti_per_richard-ginori_di_doccia,_coppa_alato,_1927_(sesto_f.no,_museo_ginori)_con_aeroplani.jpg" target="_blank" rel="noopener">Museo Ginori</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Piazza_della_signoria,_palazzo_vecchio,_veduta_01.jpg" target="_blank" rel="noopener">Palazzo Vecchio</a>,
-  <a href="https://commons.wikimedia.org/wiki/File:2016_Vasari_Corridor_02.jpg" target="_blank" rel="noopener">Corridoio Vasariano</a>,
+  <a href="https://commons.wikimedia.org/wiki/File:Ponte_Vecchio_from_Ponte_alle_Grazie.jpg" target="_blank" rel="noopener">Ponte Vecchio</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Jard%C3%ADn_de_B%C3%B3boli,_Florencia,_Italia,_2022-09-19,_DD_26.jpg" target="_blank" rel="noopener">Boboli</a>,
   <a href="https://commons.wikimedia.org/wiki/File:Firenze_-_Piazzale_Michelangelo,_Firenze,_Italy_-_April_6,_2015_02.jpg" target="_blank" rel="noopener">Firenze</a>.
   Лицензии CC BY-SA, авторы указаны на страницах файлов.
