@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Барахолки · 21–25 ноября</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{--ink:#2b2522;--muted:#8a7f78;--cream:#f7f1ea;--line:#e6dcd2;--rose:#b5646b;--olive:#6f7a52;--grey:#a39a92}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:Georgia,"Times New Roman",serif;color:var(--ink);background:var(--cream)}
+  #map{position:fixed;inset:0 0 0 0}
+  .panel{position:fixed;z-index:1000;left:12px;top:12px;bottom:12px;width:360px;max-width:calc(100% - 24px);
+    background:rgba(247,241,234,.97);border:1px solid var(--line);border-radius:14px;overflow:auto;padding:18px 18px 10px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+  h1{font-size:20px;font-weight:normal;margin:0 0 2px;letter-spacing:.02em}
+  .sub{font:12px/1.4 -apple-system,Segoe UI,Arial,sans-serif;color:var(--muted);margin-bottom:14px}
+  h2{font:600 11px/1 -apple-system,Segoe UI,Arial,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:16px 0 8px}
+  .item{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+  .item:hover .t{color:var(--rose)}
+  .n{flex:0 0 24px;height:24px;border-radius:50%;color:#fff;font:600 12px/24px -apple-system,Segoe UI,Arial,sans-serif;text-align:center}
+  .t{font-size:15px}
+  .d{font:12px/1.45 -apple-system,Segoe UI,Arial,sans-serif;color:var(--muted);margin-top:2px}
+  .tag{display:inline-block;font:600 10px/1 -apple-system,Segoe UI,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px;margin-top:4px}
+  .hi{background:#f1dfe0;color:var(--rose)} .mid{background:#e9ecdf;color:var(--olive)} .lo{background:#eceae7;color:var(--grey)}
+  .legend{font:12px/1.6 -apple-system,Segoe UI,Arial,sans-serif;color:var(--muted)}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .leaflet-popup-content{font:13px/1.45 -apple-system,Segoe UI,Arial,sans-serif;margin:12px 14px}
+  .leaflet-popup-content b{font-family:Georgia,serif;font-size:15px;font-weight:normal}
+  .leaflet-popup-content a{color:var(--rose)}
+  .pin{width:26px;height:26px;border-radius:50%;color:#fff;font:600 12px/26px -apple-system,Segoe UI,Arial,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+  @media (max-width:700px){.panel{top:auto;height:46%;left:8px;right:8px;bottom:8px;width:auto}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h1>Барахолки · 24 ноября, вторник</h1>
+  <div class="sub">Утро в Вероне, по дороге с Гарды, после обеда Болонья, вечером Флоренция. Нажми на место, и карта его покажет.</div>
+  <div class="legend">
+    <span class="dot" style="background:var(--rose)"></span>ближе всего к Open Troc ·
+    <span class="dot" style="background:var(--olive)"></span>стоит заехать ·
+    <span class="dot" style="background:var(--grey)"></span>запасное / с группой
+  </div>
+  <div id="list"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const C={hi:'#b5646b',mid:'#6f7a52',lo:'#a39a92',base:'#2b2522'};
+const groups=[
+ {title:'Дорога', items:[
+  {n:'✈',k:'base',name:'Аэропорт Болоньи',ll:[44.5354,11.2887],d:'21 ноября, прилёт. До Гарды около 1 ч 45 мин на машине.'},
+  {n:'♨',k:'base',name:'Озеро Гарда · Сирмионе',ll:[45.4929,10.6077],d:'21–23 с подругой. Ночь на 23-е лучше провести здесь: до первой барахолки в Вероне 35 минут, выезжать 23-го вечером не нужно.'}
+ ]},
+ {title:'Утро · Верона', items:[
+  {n:1,k:'hi',name:'Mercatino di Basso Acquar',ll:[45.4231,10.9916],
+   d:'Via Basso Acquar 69. Работает с 1995 года, 800 м². Мебель, антиквариат, посуда, лампы, картины, всё вперемешку.<br>Вт 9:30–12:30, 15:30–19:30 · 045 806 9131',
+   tag:['hi','похоже на Open Troc']},
+  {n:2,k:'hi',name:'Mattaranetta',ll:[45.4228,11.0670],
+   d:'Via Pontara Sandri. Благотворительный склад при кооперативе: мебель и предметы для дома. В таких местах цены обычно ниже, чем у перекупщиков.<br>Вт 9–12, 14–18 · 045 976 024',
+   tag:['hi','дёшево, надо рыться']},
+  {n:3,k:'lo',name:'Usa & Riusa',ll:[45.4347,11.0112],
+   d:'Via Giolfino 2. Работает с 2001 года, комиссионка, есть мебель.<br>Вт 9–12:30, 15:30–19 · запасной вариант',
+   tag:['lo','запасное']}
+ ]},
+ {title:'После обеда · Болонья', items:[
+  {n:4,k:'hi',name:'Il mondo delle Occasioni',ll:[44.5148,11.3520],
+   d:'Via De Gandolfi 8/A. Старьёвщик с 1996 года: старые вещи, антиквариат, середина века. Размер (около 1000 м²) называет ChatGPT, сама подтвердить не смогла.<br>Ежедневно 10–19:30 · 051 359 484',
+   tag:['hi','похоже на Open Troc']},
+  {n:5,k:'mid',name:'Mercato dell\'usato Piazza Grande',ll:[44.5283,11.3671],
+   d:'Via Stalingrado 97/2, в 5 минутах от № 4. Благотворительный склад: мебель, посуда, декор.<br>Вт 10–14, 15–19',
+   tag:['mid','дёшево']},
+  {n:6,k:'mid',name:'Cose nel Tempo',ll:[44.4775,11.4192],
+   d:'Via Vittoria 7, Сан-Лаццаро. 800 м², старая мебель, комод XIX века за 180 €.<br>Часы во вторник не нашлись, позвони накануне',
+   tag:['mid','уточнить часы']}
+ ]},
+ {title:'Флоренция и с группой', items:[
+  {n:'F',k:'base',name:'Флоренция',ll:[43.7764,11.2480],d:'Вечер 24-го: из Болоньи около 1 ч 15 мин на машине или 40 мин поездом. 25-го ты встречаешь группу.'},
+  {n:7,k:'lo',name:'Mercatino dell\'Usato Lucca',ll:[43.8626,10.5227],
+   d:'Via dell\'Acquacalda 192, Лукка. Больше 2000 м², комиссионка. От Флоренции около часа, можно съездить с группой 25–30.<br>Вт–вс 10–12:30, 15:30–19:30 · 0583 496 920',
+   tag:['lo','с группой']}
+ ]}
+];
+const map=L.map('map',{zoomControl:false}).setView([44.9,11.0],8);
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap, © CARTO',maxZoom:19}).addTo(map);
+const all=[],list=document.getElementById('list');
+groups.forEach(g=>{
+  const h=document.createElement('h2');h.textContent=g.title;list.appendChild(h);
+  g.items.forEach(p=>{
+    const icon=L.divIcon({className:'',html:`<div class="pin" style="background:${C[p.k]}">${p.n}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
+    const gm=`https://www.google.com/maps/search/?api=1&query=${p.ll[0]},${p.ll[1]}`;
+    const m=L.marker(p.ll,{icon}).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.d}<br><a href="${gm}" target="_blank">Открыть в Google Maps</a>`);
+    all.push(p.ll);
+    const el=document.createElement('div');el.className='item';
+    el.innerHTML=`<div class="n" style="background:${C[p.k]}">${p.n}</div><div><div class="t">${p.name}</div><div class="d">${p.d}</div>${p.tag?`<span class="tag ${p.tag[0]}">${p.tag[1]}</span>`:''}</div>`;
+    el.onclick=()=>{map.flyTo(p.ll,13);m.openPopup();};
+    list.appendChild(el);
+  });
+});
+// маршрут 24-го
+L.polyline([[45.4929,10.6077],[45.4231,10.9916],[45.4228,11.0670],[44.5148,11.3520],[44.5283,11.3671],[44.4775,11.4192],[43.7764,11.2480]],
+  {color:'#b5646b',weight:2,opacity:.7,dashArray:'6 6'}).addTo(map);
+map.fitBounds(all,{paddingTopLeft:[window.innerWidth>700?380:20,20],paddingBottomRight:[20,window.innerWidth>700?20:window.innerHeight*0.48]});
+</script>
+</body>
+</html>
