@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кишинёв. Только вкусное — бонусный гид Curated Pleasure</title>
+<meta name="description" content="Небольшой гид по Кишинёву: где очень вкусно, где жить, что посмотреть и куда за вином.">
+<meta property="og:title" content="Кишинёв. Только вкусное">
+<meta property="og:description" content="Бонусный гид Curated Pleasure: ужины, завтраки, вино, отели и что посмотреть.">
+<meta property="og:image" content="cover.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5ede0; --paper2:#efe4d2; --ink:#2b2220; --soft:#6d625b;
+    --wine:#6e1f2c; --olive:#5d6a3a; --gold:#b08a4a; --line:#d9c9ae;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font:400 15.5px/1.55 Manrope, "Segoe UI", Arial, sans-serif;
+    background-image:radial-gradient(rgba(110,31,44,.035) 1px, transparent 1px);
+    background-size:5px 5px;}
+  a{color:var(--wine)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+
+  /* обложка */
+  .cover{position:relative;max-width:760px;margin:0 auto}
+  .cover img{display:block;width:100%;height:auto}
+  .cover .title{position:absolute;left:12%;right:12%;top:4%;text-align:center;padding:10px 4% 12px;background:radial-gradient(ellipse at center,rgba(245,237,224,.92) 0%,rgba(245,237,224,.75) 55%,rgba(245,237,224,0) 78%)}
+  .kicker{font:600 11px/1 Manrope,sans-serif;letter-spacing:.28em;text-transform:uppercase;color:var(--wine)}
+  .cover h1{font:600 clamp(44px,11vw,84px)/.95 "Cormorant Garamond",Georgia,serif;margin:.18em 0 .08em;color:var(--wine);letter-spacing:-.01em}
+  .cover .sub{font:italic 500 clamp(19px,4.4vw,28px)/1.1 "Cormorant Garamond",Georgia,serif;color:var(--ink)}
+  .ribbon{height:7px;background:linear-gradient(90deg,var(--wine),#8e3341 50%,var(--wine))}
+
+  .intro{padding:30px 0 6px;text-align:center}
+  .intro p{font:500 clamp(19px,4.6vw,23px)/1.4 "Cormorant Garamond",Georgia,serif;margin:0 auto;max-width:560px}
+  .orn{color:var(--gold);letter-spacing:.6em;text-align:center;margin:18px 0 0;font-size:13px}
+
+  .toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 8px;padding:0;list-style:none}
+  .toc a{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:30px;padding:6px 13px;font-size:13px;color:var(--ink);background:rgba(255,255,255,.35)}
+
+  section{padding:34px 0 6px}
+  .sh{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:6px}
+  .num{font:600 13px/1 Manrope,sans-serif;color:var(--gold);letter-spacing:.12em}
+  h2{font:600 clamp(30px,7vw,40px)/1 "Cormorant Garamond",Georgia,serif;margin:0;color:var(--wine)}
+  .lead{color:var(--soft);margin:10px 0 4px;font-size:14.5px}
+
+  .card{padding:16px 0 15px;border-bottom:1px dashed var(--line);break-inside:avoid;page-break-inside:avoid}
+  .card:last-child{border-bottom:0}
+  .card h3{font:600 23px/1.1 "Cormorant Garamond",Georgia,serif;margin:0 0 3px}
+  .tag{font:600 10.5px/1 Manrope,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--olive);margin-bottom:7px}
+  .card p{margin:0 0 6px}
+  .take{margin:0 0 6px}
+  .take b{color:var(--wine);font-weight:600}
+  .meta{font-size:13px;color:var(--soft)}
+  .meta a{white-space:nowrap;font-weight:600;text-decoration:none;border-bottom:1px solid rgba(110,31,44,.35)}
+
+  .box{background:var(--paper2);border:1px solid var(--line);border-radius:4px;padding:18px 20px;margin:28px 0 0}
+  .box h3{font:600 22px/1.1 "Cormorant Garamond",Georgia,serif;margin:0 0 8px;color:var(--wine)}
+  .box ul{margin:0;padding-left:18px}
+  .box li{margin:4px 0}
+
+  footer{text-align:center;padding:40px 0 50px;color:var(--soft);font-size:13px}
+  footer .brand{font:600 26px/1 "Cormorant Garamond",Georgia,serif;color:var(--wine);letter-spacing:.02em;margin:10px 0 6px}
+  footer .motto{font-style:italic;font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;color:var(--ink)}
+
+  .pt,.pt>thead,.pt>tbody,.pt>tfoot,.pt tr,.pt td{display:block;padding:0;margin:0;border:0}
+  .pt>thead,.pt>tfoot{display:none}
+  @media print{
+    @page{size:A4;margin:0}
+    html,body{background:var(--paper);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background-image:none;font-size:11.2pt}
+    .pt{display:table;width:100%;border-collapse:collapse}
+    .pt>thead{display:table-header-group}.pt>tfoot{display:table-footer-group}.pt>tbody{display:table-row-group}
+    .pt tr{display:table-row}.pt td{display:table-cell}
+    .sp{height:13mm}
+    .cover,.ribbon{margin:0 16mm}
+    .wrap{padding:0 16mm !important}
+    .toc{display:none}
+    .cover{max-width:none}
+    .cover-page{page-break-after:always}
+    section{padding-top:18px}
+    .sh,.lead{break-after:avoid;page-break-after:avoid}
+    .wrap{max-width:none}
+    .card{padding:10px 0 10px}
+    .card h3{font-size:19pt}
+    a{text-decoration:none}
+  }
+</style>
+</head>
+<body>
+<table class="pt"><thead><tr><td><div class="sp"></div></td></tr></thead><tfoot><tr><td><div class="sp"></div></td></tr></tfoot><tbody><tr><td>
+
+<div class="cover-page">
+  <header class="cover">
+    <img src="cover.jpg" alt="Кишинёв: вино, плацинда и Триумфальная арка">
+    <div class="title">
+      <div class="kicker">Curated Pleasure · бонусный гид</div>
+      <h1>Кишинёв</h1>
+      <div class="sub">только вкусное</div>
+    </div>
+  </header>
+  <div class="ribbon"></div>
+
+  <div class="wrap">
+    <div class="intro">
+      <p>Небольшой гид для тех, кто едет в Кишинёв и не хочет тратить ни один приём пищи впустую. Только места, где по-настоящему вкусно, отели с лучшими отзывами и то, что действительно стоит увидеть.</p>
+      <div class="orn">✦ ✦ ✦</div>
+    </div>
+    <ul class="toc">
+      <li><a href="#dinners">Ужины</a></li>
+      <li><a href="#local">Местный вкус</a></li>
+      <li><a href="#morning">Завтраки и кофе</a></li>
+      <li><a href="#wine">Вино в городе</a></li>
+      <li><a href="#wineries">Винодельни</a></li>
+      <li><a href="#hotels">Где жить</a></li>
+      <li><a href="#see">Что посмотреть</a></li>
+    </ul>
+  </div>
+</div>
+
+<main class="wrap">
+
+<section id="dinners">
+  <div class="sh"><span class="num">01</span><h2>Ужины, ради которых стоит приехать</h2></div>
+  <p class="lead">Вечер, который запомнится вкусом. На пятницу и субботу стол лучше бронировать заранее.</p>
+
+  <div class="card">
+    <h3>Fuior</h3>
+    <div class="tag">современная молдавская кухня</div>
+    <p>Молдавская кухня, пересказанная заново: домашние рецепты в ресторанной подаче и минималистичный красивый интерьер. Лучшее место, чтобы понять, какой может быть местная еда.</p>
+    <p class="take"><b>Что брать:</b> чёрные вареники и десерт «Вечерний Кишинёв», к ним молдавское вино.</p>
+    <div class="meta">ул. Пушкина, 30 · <a href="https://www.google.com/maps/search/?api=1&query=Fuior+Pu%C8%99kin+30+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Julien Gastro Bistrot</h3>
+    <div class="tag">французское гастробистро</div>
+    <p>Один из самых высоко оценённых ресторанов города. Французская классика, аккуратная и очень вкусная, для красивого неспешного ужина.</p>
+    <div class="meta">ул. 31 Августа 1989, 93 · <a href="https://www.google.com/maps/search/?api=1&query=Julien+Gastro+Bistrot+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Divus</h3>
+    <div class="tag">мясо и стейки</div>
+    <p>Для тех, кто любит хорошее мясо. Европейская кухня с упором на стейки, отличный сервис и почти идеальные отзывы гостей.</p>
+    <div class="meta">ул. Митрополита Бэнулеску-Бодони, 17A · <a href="https://www.google.com/maps/search/?api=1&query=Divus+Restaurant+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Arome Locale в отеле BERDS</h3>
+    <div class="tag">локальные продукты</div>
+    <p>Ресторан при одном из лучших отелей города. Сезонные местные продукты, лёгкая современная кухня, тихая элегантная атмосфера.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=BERDS+Arome+Locale+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Gastrobar</h3>
+    <div class="tag">гриль и средиземноморская кухня</div>
+    <p>Любимое место местных на выходные: огонь, гриль, оживлённый зал. Дороговато, но гости в один голос пишут, что оно того стоит.</p>
+    <p class="take"><b>Что брать:</b> утку и бургер с трюфелем.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Gastrobar+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Zaxi</h3>
+    <div class="tag">азиатский фьюжн на крыше</div>
+    <p>Восьмой этаж, панорама ночного города и одно из лучших суши-меню Кишинёва. Место для свидания или красивого финального вечера.</p>
+    <div class="meta">ул. Митрополит Варлаам, 77, 8-й этаж Radisson Blu Leogrand · <a href="https://www.google.com/maps/search/?api=1&query=Zaxi+Radisson+Blu+Leogrand+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+</section>
+
+<section id="local">
+  <div class="sh"><span class="num">02</span><h2>Местный вкус</h2></div>
+  <p class="lead">То, что едят здесь и чего не попробуешь дома.</p>
+
+  <div class="card">
+    <h3>Gök-Oguz</h3>
+    <div class="tag">гагаузская кухня</div>
+    <p>Главный в городе ресторан гагаузской кухни: комнаты вокруг внутреннего дворика, яркий народный интерьер и баранина, которая тает во рту.</p>
+    <p class="take"><b>Что брать:</b> плов с бараниной, шурпу, гёзлеме, тушёную баранину с мамалыгой. Баранину лучше заказать за полчаса, она готовится долго.</p>
+    <div class="meta">Калеа Орхеюлуй, 19/A · <a href="https://www.google.com/maps/search/?api=1&query=G%C3%B6k-Oguz+Calea+Orheiului+19A+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Vatra Neamului</h3>
+    <div class="tag">молдавская классика</div>
+    <p>Ресторан-музей с национальным интерьером, где молдавскую кухню подают так, как её едят на праздниках.</p>
+    <p class="take"><b>Что брать:</b> токитуру с мамалыгой, брынзой и яйцом.</p>
+    <div class="meta">ул. Пушкина, 20B · <a href="https://www.google.com/maps/search/?api=1&query=Vatra+Neamului+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>La Plăcinte</h3>
+    <div class="tag">плацинды, быстро и честно</div>
+    <p>Местная сеть, где едят сами кишинёвцы. Не ресторан-событие, а лучший способ быстро и недорого попробовать главное.</p>
+    <p class="take"><b>Что брать:</b> плацинду с брынзой, вертуту с капустой, мамалыгу со сметаной.</p>
+    <div class="meta">несколько адресов по городу · <a href="https://www.google.com/maps/search/?api=1&query=La+Pl%C4%83cinte+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Saperavi</h3>
+    <div class="tag">грузинская кухня</div>
+    <p>В Кишинёве очень сильная грузинская кухня, и Saperavi из самых любимых: тысячи отзывов почти без промахов. Хинкали, хачапури и грузинское вино.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Saperavi+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Центральный рынок</h3>
+    <div class="tag">утро на рынке</div>
+    <p>Домашние сыры и брынза, плацинды с лотков, сезонные фрукты, мёд и орехи. Приходить утром, голодными.</p>
+    <div class="meta">ул. Митрополит Варлаам · <a href="https://www.google.com/maps/search/?api=1&query=Pia%C8%9Ba+Central%C4%83+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+</section>
+
+<section id="morning">
+  <div class="sh"><span class="num">03</span><h2>Завтраки, кофе, выпечка</h2></div>
+
+  <div class="card">
+    <h3>Crosta</h3>
+    <div class="tag">пекарня в доме</div>
+    <p>Жилой дом, превращённый в пекарню. Хлеб собственной выпечки, эклеры, фруктовые тарты и большое меню завтраков.</p>
+    <div class="meta">ул. Мирон Костин, 13/7 · <a href="https://www.google.com/maps/search/?api=1&query=Crosta+Kitchen+and+Bakery+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Folk's Croissant</h3>
+    <div class="tag">круассаны</div>
+    <p>Около двадцати начинок, от лосося до банана с шоколадом. Открывается в 8 утра, что для Кишинёва редкость.</p>
+    <div class="meta">ул. Пушкина, 3 · <a href="https://www.google.com/maps/search/?api=1&query=Folk%27s+Croissant+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Sincer</h3>
+    <div class="tag">гастромаркет и кафе</div>
+    <p>Продукты от местных фермеров, своя выпечка и десерты. Хорошо и для завтрака, и для обеда, и чтобы купить вкусное с собой.</p>
+    <div class="meta">ул. Михая Эминеску, 50 · <a href="https://www.google.com/maps/search/?api=1&query=Sincer+Gastromarket+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Coffeemolka</h3>
+    <div class="tag">кофе-музей</div>
+    <p>Бессарабский кофе ручной обжарки и старинные способы заваривания в интерьере маленького музея.</p>
+    <div class="meta">ул. 31 Августа 1989, 78 · <a href="https://www.google.com/maps/search/?api=1&query=Coffeemolka+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+</section>
+
+<section id="wine">
+  <div class="sh"><span class="num">04</span><h2>Вино в городе</h2></div>
+  <p class="lead">Молдова — винная страна, и пить здесь стоит местное: фетяску нягрэ, фетяску албэ, рарэ нягрэ.</p>
+
+  <div class="card">
+    <h3>Carpe Diem</h3>
+    <div class="tag">винный бар и магазин</div>
+    <p>Одна из лучших карт молдавских вин в городе и хорошая кухня к ним. Гости отдельно хвалят рибай.</p>
+    <div class="meta">ул. Колумна, 136 · <a href="https://www.google.com/maps/search/?api=1&query=Carpe+Diem+Wine+Shop+Bar+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Black Rabbit</h3>
+    <div class="tag">кафе днём, бар вечером</div>
+    <p>Красивый лофт в центре: днём обеды, вечером маленькие тарелки, живая музыка и серьёзная винная карта. Очень популярен, стол лучше бронировать за день.</p>
+    <div class="meta">ул. Влайку Пыркэлаб, 45 · <a href="https://www.google.com/maps/search/?api=1&query=Black+Rabbit+Gastro+Burrow+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Vino Pizza &amp; Wine</h3>
+    <div class="tag">пицца, канноли, вино</div>
+    <p>Простое и очень вкусное: пицца, сицилийские канноли и большой винный угол. Идеально на поздний вечер.</p>
+    <div class="meta">ул. 31 Августа 1989, 113 · <a href="https://www.google.com/maps/search/?api=1&query=Vino+Pizza+Wine+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+</section>
+
+<section id="wineries">
+  <div class="sh"><span class="num">05</span><h2>Винодельни рядом с городом</h2></div>
+  <p class="lead">Полдня или день за городом. Везде нужна бронь, лучше за 3–10 дней. В подвалах круглый год 12–14 °C, возьмите кофту.</p>
+
+  <div class="card">
+    <h3>Castel Mimi</h3>
+    <div class="tag">замок среди виноградников · ~40 минут</div>
+    <p>Самая красивая винодельня Молдовы: отреставрированный замок, дегустации, ресторан и номера, если захочется остаться на ночь. Обед бронировать заранее, здесь часто проходят свадьбы.</p>
+    <div class="meta">Булбоака · <a href="https://www.google.com/maps/search/?api=1&query=Castel+Mimi+Bulboaca">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Cricova</h3>
+    <div class="tag">подземный винный город · ~20 минут</div>
+    <p>Целый город из галерей под землёй, по которому возят на маленьком поезде. Дегустация в залах глубоко под землёй.</p>
+    <div class="meta">Крикова · <a href="https://www.google.com/maps/search/?api=1&query=Cricova+Winery">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Mileștii Mici</h3>
+    <div class="tag">самая большая коллекция вин · ~30 минут</div>
+    <p>Подземные галереи и знаменитая коллекция из полутора миллионов бутылок. Если выбирать одну подземную винодельню, эту или Cricova, обе хороши.</p>
+    <div class="meta">Милештий Мич · <a href="https://www.google.com/maps/search/?api=1&query=Milestii+Mici+Winery">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Et Cetera и Château Purcari</h3>
+    <div class="tag">день на юге · ~2 часа</div>
+    <p>Для тех, кто приехал за вином всерьёз. Et Cetera — семейная винодельня с уютным домашним обедом, их фирменное блюдо — кролик. Рядом Purcari, историческое шато, где делают знаменитое Negru de Purcari.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Et+Cetera+Winery+Crocmaz">Et Cetera на карте →</a> · <a href="https://www.google.com/maps/search/?api=1&query=Chateau+Purcari">Purcari на карте →</a></div>
+  </div>
+</section>
+
+<section id="hotels">
+  <div class="sh"><span class="num">06</span><h2>Где жить</h2></div>
+  <p class="lead">Только отели с лучшими отзывами гостей.</p>
+
+  <div class="card">
+    <h3>GREGORY Boutique Hotel</h3>
+    <div class="tag">бутик-отель · 9,7 на Booking</div>
+    <p>Лучшие отзывы в городе: красивые интерьеры, безупречная чистота и сервис, который хвалят почти в каждом отзыве. Наш первый выбор.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=GREGORY+Boutique+Hotel+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>BERDS Chișinău, MGallery</h3>
+    <div class="tag">дизайн-отель 5*</div>
+    <p>Дизайнерский отель из коллекции MGallery с рестораном Arome Locale. Для тех, кто хочет современную эстетику и отличный завтрак.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=BERDS+Chisinau+MGallery">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Nobil Luxury Boutique Hotel</h3>
+    <div class="tag">классический люкс 5*</div>
+    <p>Хрустальные люстры, мрамор, спа и ресторан-терраса на восьмом этаже с видом на город. Самый «старосветский» вариант.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Nobil+Luxury+Boutique+Hotel+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Castel Mimi Wine Resort</h3>
+    <div class="tag">ночь в замке · 9,6 на Booking</div>
+    <p>Если хочется не город, а впечатление: номера при замке среди виноградников, ужин и дегустация без необходимости куда-то ехать вечером.</p>
+    <div class="meta">Булбоака · <a href="https://www.google.com/maps/search/?api=1&query=Castel+Mimi+Wine+Resort">на карте →</a></div>
+  </div>
+</section>
+
+<section id="see">
+  <div class="sh"><span class="num">07</span><h2>Что посмотреть</h2></div>
+
+  <div class="card">
+    <h3>Орхеюл Векь</h3>
+    <div class="tag">главное за городом · ~1 час</div>
+    <p>Пещерный монастырь в скале над изгибом реки Реут и деревня Бутучень вокруг. Самый сильный пейзаж Молдовы, легко совместить с Cricova в один день.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Orheiul+Vechi">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Центр: парк Штефана чел Маре и Соборная площадь</h3>
+    <div class="tag">прогулка</div>
+    <p>Старый парк, кафедральный собор и Триумфальная арка с часами. Отсюда удобно начинать день и гулять пешком к ресторанам центра.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Parcul+Catedralei+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Национальный художественный музей</h3>
+    <div class="tag">искусство и интерьеры</div>
+    <p>Молдавское искусство в красивом историческом особняке. Сюда стоит прийти и ради самих залов.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Muzeul+Na%C8%9Bional+de+Art%C4%83+al+Moldovei">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Этнографический музей</h3>
+    <div class="tag">самое необычное здание города</div>
+    <p>Здание в мавританском стиле начала XX века, а внутри — огромный скелет древнего хоботного, народные костюмы и зелёный двор.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Muzeul+Na%C8%9Bional+de+Etnografie+%C8%99i+Istorie+Natural%C4%83">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Водонапорная башня</h3>
+    <div class="tag">вид сверху</div>
+    <p>Старинная башня с музеем истории города. Подниматься стоит ради вида на старый Кишинёв.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Muzeul+de+Istorie+a+Ora%C8%99ului+Chi%C8%99in%C4%83u+Turnul+de+ap%C4%83">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Парк Валя Морилор</h3>
+    <div class="tag">озеро и каскадная лестница</div>
+    <p>Большой парк вокруг озера с белой каскадной лестницей и смотровой точкой. Лучшая прогулка, когда хочется зелени и воздуха.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Parcul+Valea+Morilor+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="card">
+    <h3>Барахолка у рынка «Локомотив»</h3>
+    <div class="tag">для охотников за винтажом</div>
+    <p>Советская посуда, ковры, старые вещи и неожиданные находки. Приходить с утра и с наличными.</p>
+    <div class="meta"><a href="https://www.google.com/maps/search/?api=1&query=Pia%C8%9Ba+Locomotiv+Chi%C8%99in%C4%83u">на карте →</a></div>
+  </div>
+
+  <div class="box">
+    <h3>Коротко о главном</h3>
+    <ul>
+      <li>На ужины в пятницу и субботу бронируйте стол за 1–3 дня.</li>
+      <li>Винодельни — только по предварительной брони, лучше за неделю.</li>
+      <li>Главное блюдо, которое стоит попробовать, — мамалыга с брынзой и сметаной, главное вино — фетяска нягрэ.</li>
+      <li>Часы работы меняются, перед выходом лучше открыть место на карте.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <div class="orn">✦ ✦ ✦</div>
+  <div class="brand">Curated Pleasure</div>
+  <div class="motto">nothing to plan, everything to feel</div>
+</footer>
+
+</td></tr></tbody></table>
+</body>
+</html>
